@@ -62,7 +62,9 @@ Implemented in Stage 01:
   version/device output.
 - Malformed and incomplete fixture cases that must return errors or missing fields
   rather than guessed values.
-- Bounded-command success, output truncation, and timeout cleanup.
+- Bounded-command success, non-zero exit, output truncation, process-group timeout
+  cleanup, direct-child reaping, inherited-pipe descendant cleanup, and bounded
+  return when a descendant deliberately escapes the process group.
 - CLI argument parsing and human rendering.
 
 Planned for later stages:

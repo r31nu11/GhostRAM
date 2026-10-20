@@ -6,9 +6,11 @@
 acceptance**.
 **Branch:** `dev`.
 **Commit state:** local history. The Stage 01 content commit is
-`ed96c19ea3a84f8c7e981a61f8c13764695eb13f`; the report/status commit follows it
-and is the current HEAD. Nothing has been pushed.
-**Working tree:** clean after the report/status commit.
+`ed96c19ea3a84f8c7e981a61f8c13764695eb13f` and the report/status commit is
+`02ad8bb8a8360b0021f849f195be8bf26ef43365`. The subprocess-safety follow-up commit
+is the current HEAD; its exact hash is visible with `git log -1`. Nothing has been
+pushed.
+**Working tree:** clean after the safety-follow-up commit.
 **Upstream:** `origin/dev` and `origin/main` remain at the starting commit
 `bdfced9`.
 
@@ -42,7 +44,8 @@ was performed. Stage 01 is not accepted until the maintainer reviews it.
   GPU/driver, Vulkan adapters, tool availability, and external llama.cpp
   executables.
 - Bounded subprocess execution with explicit paths and argument arrays, output
-  limits, timeouts, and direct-child cleanup. No shell interpolation or inference
+  limits, isolated Linux process groups, group termination and direct-child reaping
+  on timeout, and bounded output draining. No shell interpolation or inference
   launch.
 - `ghostram doctor` human output and clean JSON output, including partial and
   unavailable categories when optional hardware or tools are absent.
@@ -118,12 +121,12 @@ values remain unchanged.
 | --- | --- |
 | `cargo fmt --all -- --check` | Passed |
 | `cargo clippy --workspace --all-targets --locked -- -D warnings` | Passed |
-| `cargo test --workspace --locked` | Passed: 64 tests (13 core, 39 probe, 5 CLI unit, 7 CLI integration) |
+| `cargo test --workspace --locked` | Passed: 69 tests (13 core, 44 probe, 5 CLI unit, 7 CLI integration) |
 | `cargo build --workspace --locked` | Passed |
 | `ghostram doctor` | Completed on the primary laptop; overall `available` |
 | `ghostram doctor --json` | Valid JSON; stdout contained only the envelope |
 | `python3 scripts/check_docs.py` | Passed: 29 Markdown files, 122 relative links, 24 required files |
-| `bash scripts/check-commit-range.sh bdfced9 HEAD` | Passed for the content commit: all eight checked commit messages accepted; final range through the report commit is rerun after commit and recorded in the hand-off |
+| `bash scripts/check-commit-range.sh bdfced9d7db49a1e2bdad5dd1602822734da33b1 HEAD` | Passed for all non-merge commits in the checked range; rerun after the final commit and recorded in the hand-off |
 | Commit-message fixtures | Passed: valid message accepted; invalid header rejected with exit 1 |
 | YAML parse of `.github/workflows/quality.yml` | Passed: jobs `commit-messages`, `documentation`, and `rust` |
 | `git diff --check` / cached check | Clean |
@@ -144,8 +147,10 @@ values remain unchanged.
   executable names. It does not search arbitrary directories, verify a build hash,
   or prove backend, model, or inference support.
 - Storage reporting covers `/` only. Additional model volumes are not measured.
-- Timeout cleanup kills and reaps the direct child; descendant process-tree cleanup
-  is not implemented or tested.
+- On Linux, timeouts kill the isolated process group and reap the direct child,
+  and output pipes are drained with a bounded grace. A descendant that deliberately
+  leaves the process group can survive; the bounded drain prevents it from blocking
+  return but does not contain it.
 - The `tools` category can report `available` when a found tool lacks version text.
   That means the executable was found; it does not prove a working toolchain.
 - The workspace declares `rust-version = "1.85"`, but only Rust 1.94.1 was used.

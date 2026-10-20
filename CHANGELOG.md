@@ -20,7 +20,8 @@ development snapshot, not a release artifact or supported installation.
   GPU/driver, Vulkan devices, development/GPU tool availability, and external
   llama.cpp executable discovery.
 - Bounded subprocess execution with explicit paths and argument arrays, output
-  limits, timeouts, and child cleanup. No shell interpolation is used.
+  limits, timeouts, isolated process groups, and bounded group cleanup. No shell
+  interpolation is used.
 - `ghostram doctor` human-readable output and `ghostram doctor --json` with clean
   stdout, stable schema identifiers, and meaningful exit codes.
 - Deterministic parser fixtures and tests for OS release, CPU info, meminfo, swap,
@@ -69,6 +70,10 @@ development snapshot, not a release artifact or supported installation.
 
 ### Fixed
 
+- Stage 01 subprocess timeouts now terminate the isolated process group on Unix
+  and drain output pipes with a bounded grace. A descendant that inherits
+  stdout/stderr can no longer keep the caller blocked after the direct child is
+  killed.
 - Stage 01 parser handling avoids zero, guessed, or "supported" values for missing
   or inconclusive measurements. Missing optional tools and hardware remain
   explicit `partial` or `unavailable` results.

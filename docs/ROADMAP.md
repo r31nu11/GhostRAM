@@ -58,7 +58,7 @@ report without touching engines or models.
   GPU and driver, Vulkan devices, relevant tools, and llama.cpp executable
   discovery.
 - Bounded subprocess execution with explicit paths and argument arrays, output
-  limits, timeouts, and direct-child cleanup.
+  limits, timeouts, isolated process groups, and bounded group cleanup.
 - `ghostram doctor` human-readable output and `ghostram doctor --json`.
 - Deterministic parser fixtures, malformed-input tests, partial-report tests, and
   CLI integration tests.

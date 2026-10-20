@@ -76,8 +76,10 @@ verified an engine.
   invoked with explicit executable paths and argument arrays. No shell is used.
 - Version queries have a 2-3 second timeout; Vulkan summary has an 8 second
   timeout; llama.cpp device listing has a 5 second timeout.
-- Captured stdout and stderr are bounded in memory. A timed-out child is killed
-  and reaped.
+- Captured stdout and stderr are bounded in memory. On Unix, each probe runs in
+  its own process group; a timed-out probe group is sent `SIGKILL`, the direct
+  child is reaped, and output pipes are drained with a bounded grace. A descendant
+  that deliberately leaves the process group can survive but cannot block return.
 - A timeout, non-zero exit, or unparseable output makes the relevant category
   `partial` or `unavailable`; it is never reported as supported.
 - Only `llama-server`, `llama-bench`, and `llama-cli` are considered engine

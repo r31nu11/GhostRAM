@@ -21,12 +21,12 @@ read-only environment report without installing or launching an engine or model.
 | --- | --- | --- | --- |
 | 1 | Create only the crates justified by ADR-0002: `ghostram-core`, `ghostram-probe`, `ghostram-cli`. | Met | Workspace has exactly those three members; see `Cargo.toml` and section 5. |
 | 2 | Define typed byte quantities, system/hardware models, diagnostic states, typed errors, and a versioned serializable report envelope in core. | Met | `ghostram-core` modules and 13 passing unit tests. |
-| 3 | Implement read-only probes for OS/kernel, CPU, RAM, swap/zram, storage, NVIDIA GPU/driver, Vulkan adapters, tools, and external llama.cpp discovery. | Met | `ghostram-probe` modules, fixtures, and 39 passing unit tests. The command ran successfully on the primary laptop. |
-| 4 | Bound and audit subprocesses; use explicit paths and argument arrays; no shell interpolation; clean up timeouts; never convert inconclusive results into support. | Met | `command.rs` uses `Command` with argument arrays, piped output limits, polling, `kill`, and `wait`. A timeout test passes. Unavailable/partial categories retain reasons. |
+| 3 | Implement read-only probes for OS/kernel, CPU, RAM, swap/zram, storage, NVIDIA GPU/driver, Vulkan adapters, tools, and external llama.cpp discovery. | Met | `ghostram-probe` modules, fixtures, and 44 passing unit tests. The command ran successfully on the primary laptop. |
+| 4 | Bound and audit subprocesses; use explicit paths and argument arrays; no shell interpolation; clean up timeouts; never convert inconclusive results into support. | Met for Linux | `command.rs` uses explicit `Command` argument arrays, places each child in its own process group, bounds stdout/stderr memory, polls pipes with nonblocking reads, and on timeout sends `SIGKILL` to the group before reaping the direct child. Deterministic tests cover direct timeout/reap, inherited-pipe descendant cleanup, bounded return when a descendant deliberately escapes the group, output truncation, success, and non-zero exits. Unavailable/partial categories retain reasons. |
 | 5 | Provide `ghostram doctor`, `doctor --json`, help/version, meaningful exit codes, and useful output when optional tools are absent. | Met | CLI unit and integration tests pass; missing-tool and partial-report tests pass; invalid arguments return 2. |
 | 5a | Missing engines and models are reported as absent, not as errors. | Met for engines; model discovery is out of scope | The engines category reports an available empty result with a reason. Model discovery and absence reporting are deferred to Stage 02, so no model claim is made. |
 | 6 | JSON includes schema version, application version, generation time, system data, category states, unavailable reasons, and discovered tool/engine paths/versions. | Met | `ghostram.doctor/1` envelope; real JSON was parsed and inspected. |
-| 7 | Add deterministic parser/unit tests, malformed-input tests, partial-report tests, and CLI integration tests. | Met | 64 tests pass in total: 13 core, 39 probe, 5 CLI unit, and 7 CLI integration. |
+| 7 | Add deterministic parser/unit tests, malformed-input tests, partial-report tests, and CLI integration tests. | Met | 69 tests pass in total: 13 core, 44 probe, 5 CLI unit, and 7 CLI integration. |
 | 8 | Add Rust CI checks while retaining documentation and commit-message jobs. | Met | `.github/workflows/quality.yml` retains both existing jobs and adds `rust` with format, Clippy, test, and locked build steps. YAML parsed locally. |
 | 9 | Update required project documentation and create a Stage 01 report with all 14 sections. | Met | Documentation changes are listed in section 13; this report contains all template sections. |
 | 10 | Run the required checks and record exact results. | Met | Section 7 records the commands and observed output. |
@@ -45,7 +45,8 @@ Completed:
   models, typed errors, the `ghostram.doctor/1` envelope, and schema validation.
 - Implemented read-only Linux collection for OS, CPU, memory, swap, zram,
   storage, NVIDIA GPU, Vulkan, tools, and llama.cpp executable discovery.
-- Implemented bounded command execution with output limits and timeouts.
+- Implemented bounded command execution with output limits and timeouts, isolated
+  process groups, group termination on timeout, and bounded output draining.
 - Implemented human and JSON output, argument validation, help, version, and
   exit codes.
 - Added parser fixtures and tests for valid, incomplete, malformed, and partial
@@ -152,12 +153,14 @@ Direct dependencies:
 | --- | --- | --- | --- |
 | `serde` with `derive` | 1.0.229 | Runtime, `ghostram-core` | Typed JSON serialization of the diagnostic contract. |
 | `serde_json` | 1.0.154 | Runtime, `ghostram-cli`; dev, `ghostram-core` | JSON generation and test round-trips. |
+| `libc` | 0.2.191 | Runtime, `ghostram-probe` on Unix | Minimal binding for `kill(2)`; `std::process` can create a process group but does not expose group signalling. No C build step was added. |
 | `ghostram-core` | path | Runtime, probe and CLI | Shared contracts and models. |
 | `ghostram-probe` | path | Runtime, CLI | Read-only collection. |
 
 Transitive locked packages are `serde_core`, `serde_derive`, `proc-macro2`,
-`quote`, `syn`, `unicode-ident`, `itoa`, `memchr`, and `zmij`. No C library,
-GPU toolkit, engine, model, or build-system dependency was added.
+`quote`, `syn`, `unicode-ident`, `itoa`, `memchr`, and `zmij`. `libc` adds only
+the platform C-library bindings already used by the Rust runtime; no GPU toolkit,
+engine, model, native-build dependency, or new system package was added.
 
 Toolchain observed: `rustc 1.94.1`, `cargo 1.94.1`, stable x86_64. The workspace
 declares Rust 2024 edition and `rust-version = "1.85"`. `Cargo.lock` is committed
@@ -179,10 +182,8 @@ $ cargo fmt --all -- --check
 
 ```text
 $ cargo clippy --workspace --all-targets --locked -- -D warnings
-    Checking ghostram-core v0.1.0-dev
-    Checking ghostram-probe v0.1.0-dev
     Checking ghostram-cli v0.1.0-dev
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.56s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
 ```
 
 ### 7.3 Tests
@@ -192,10 +193,38 @@ $ cargo test --workspace --locked
 5 passed (CLI unit tests)
 7 passed (CLI integration tests)
 13 passed (ghostram-core unit tests)
-39 passed (ghostram-probe unit tests)
+44 passed (ghostram-probe unit tests)
 0 passed (doc-tests)
-Total: 64 passed; 0 failed; 0 ignored
+Total: 69 passed; 0 failed; 0 ignored
 ```
+
+The focused lifecycle run below was repeated five times; all eight command-module
+tests passed on every run.
+
+```text
+$ cargo test -p ghostram-probe --lib command::tests -- --nocapture
+running 8 tests
+test command::tests::subprocess_lifecycle_helper ... ok
+test command::tests::bounds_both_output_streams ... ok
+test command::tests::reports_nonzero_exit_without_a_timeout ... ok
+test command::tests::captures_output_and_success ... ok
+test command::tests::truncates_captured_output ... ok
+test command::tests::terminates_and_reaps_a_timed_out_child ... ok
+test command::tests::terminates_an_inherited_pipe_descendant_on_timeout ... ok
+test command::tests::bounded_return_survives_a_descendant_that_escapes_the_process_group ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 36 filtered out; finished in 2.51s
+```
+
+The output test writes more than the 64 KiB stdout and 16 KiB stderr limits and
+verifies that both captured strings stop exactly at those limits. The timed-out
+tests use a Rust test-helper process rather than a shell. They assert an outer
+return bound of 8 seconds, verify the direct child is reaped by checking that
+`/proc/<pid>` disappears, and verify a descendant in the same process group is
+also gone. The escaped-descendant test deliberately creates a new process group,
+observes a bounded return, verifies that the escaped process survived, and then
+kills it and waits for it to disappear as test cleanup. That test records the
+containment limitation rather than claiming absolute process-tree control.
 
 ### 7.4 Locked build
 
@@ -266,8 +295,8 @@ $ git diff --check
 $ git diff --cached --check
 (no output after staging; exit 0)
 
-$ bash scripts/check-commit-range.sh bdfced9 HEAD
-check: ... (eight local commits, including ed96c19ea3a8)
+$ bash scripts/check-commit-range.sh bdfced9d7db49a1e2bdad5dd1602822734da33b1 HEAD
+check: ... (all non-merge local commits in the range, including ed96c19ea3a8)
 ok: all checked commit messages passed
 
 $ git config --local --get user.name
@@ -279,8 +308,9 @@ r31nu11@mail.ru
 The commit-message checker fixtures were rerun during final validation; the valid
 message was accepted and the invalid message was rejected with exit 1. The result
 is recorded in the final hand-off because the fixtures are not part of the Rust
-test count. The range check was run again through the report/status commit after
-that commit was created; the hand-off records the final observed result.
+test count. The range check was run again after the final safety-follow-up commit
+was created; the hand-off records the final observed result. No fixed count of
+local commits is recorded here because the count changes with each follow-up.
 
 ## 8. Hardware tests and measurements
 
@@ -319,7 +349,7 @@ benchmark results.
 | Secondary GTX 1070 validation. | Machine was not accessed. | Cross-machine behavior is unknown. |
 | GitHub Actions execution. | No push authorized. | The workflow YAML parsed locally, but hosted-runner behavior is unverified. |
 | Non-Linux fallback report. | Running on Linux only. | The unsupported-platform path is implemented but not exercised end to end. |
-| Descendant process-tree cleanup on timeout. | No process-group mechanism in Stage 01. | A timed-out child that leaves descendants holding stdout/stderr could delay return. |
+| Deliberate process-group escape containment. | A descendant that calls `setsid()`, changes its process group, or enters another namespace is outside the group `SIGKILL`. | Such a descendant may survive a timeout. The bounded-drain test verifies that it cannot block return through inherited pipes; it does not provide containment. |
 | Real partial/unavailable hardware failures. | Missing tools were tested through `PATH`; an installed-but-failing GPU tool was not induced. | Error paths for broken drivers or malformed real outputs are less exercised than fixtures. |
 | Packaging, installation, uninstallation, and upgrade. | Stage 08 not started. | No release workflow has been validated. |
 
@@ -343,9 +373,14 @@ benchmark results.
   is an intentional valid-empty result, not an error and not evidence of support.
 - Storage collection covers `/` only. Model volumes and other mounts are not
   reported yet.
-- Timeout cleanup kills and reaps the direct child. It does not create a process
-  group, so a descendant that inherits the pipes could survive or delay the reader
-  join. This is a known Stage 01 limitation, not a claimed safety property.
+- On Unix, each probe runs in its own process group. A timeout sends `SIGKILL` to
+  the group, then reaps the direct child. stdout and stderr are nonblocking and
+  drained with a 500 ms grace after direct-child exit, so inherited pipes cannot
+  cause an unbounded reader wait. A descendant that deliberately calls `setsid()`,
+  changes its process group, or enters another namespace can escape group
+  termination and survive. This is not absolute containment.
+- On non-Unix platforms bounded subprocess execution returns an explicit error;
+  `collect_report` reports the platform as unsupported before probing.
 - Some outputs are locale- or version-dependent. The parsers use stable key and
   numeric fields where possible, but no exhaustive matrix of OS, driver, or Vulkan
   versions was tested.
@@ -369,23 +404,26 @@ benchmark results.
 **Base commit:** `7d3e41940a25bb3d9845478b603a359a098c22af` (`docs(adr-0005): stabilize engine build identity`).
 **Content commit:** `ed96c19ea3a84f8c7e981a61f8c13764695eb13f`
 (`feat(stage-01): add diagnostic workspace and doctor command`).
-**Report/status commit:** the follow-up local commit that records the content
-commit hash and final working-tree state. It is the current HEAD when this report
-is read in a clean tree; the exact hash is visible with `git log -1`.
+**Report/status commit:** `02ad8bb8a8360b0021f849f195be8bf26ef43365`
+(`docs(stage-01): record validation and content commit`).
+**Safety-follow-up commit:** the local commit that adds process-group timeout
+cleanup, lifecycle tests, the `libc` dependency, and this correction. It is the
+current HEAD when this report is read in a clean tree; the exact hash is visible
+with `git log -1`.
 
-The commits are local. No push, merge to `main`, tag, or GitHub Release was
+All commits are local. No push, merge to `main`, tag, or GitHub Release was
 performed. `origin/dev` and `origin/main` remained at
 `bdfced9d7db49a1e2bdad5dd1602822734da33b1`.
 
 ## 12. Git working-tree status
 
 At the start of Stage 01 the tree was clean at the base commit. During the work it
-contained the new workspace and documentation changes. After the content commit,
-the only remaining changes were the content-hash and final-state corrections in
-this report and `PROJECT_STATUS.md`. Those changes were committed as the
-report/status commit, leaving `git status --short` empty. The final hand-off
-records the observed clean state; any remaining path would be unexpected and was
-not silently discarded.
+contained the new workspace and documentation changes. The content and
+report/status commits followed. The safety follow-up started from a clean tree at
+`02ad8bb8a8360b0021f849f195be8bf26ef43365`, changed the command runner, manifests,
+lockfile, and the status/roadmap/schema/testing/report documentation, and was then
+committed. The final hand-off records the observed clean state; any remaining path
+would be unexpected and was not silently discarded.
 
 ## 13. Documentation updated
 
@@ -401,6 +439,10 @@ Updated:
 - `reports/stages/stage-00-technical-reconnaissance.md` for the accepted/authorized
   transition, while preserving its historical observations.
 - `reports/stages/stage-01-minimal-rust-workspace.md` (this report).
+
+The safety follow-up additionally corrected the subprocess-safety statements in
+`PROJECT_STATUS.md`, `ROADMAP.md`, `DOCTOR_SCHEMA.md`, and `TESTING.md`, and
+recorded the bounded timeout/cleanup behavior in `CHANGELOG.md`.
 
 Not updated:
 
