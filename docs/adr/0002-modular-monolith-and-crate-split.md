@@ -1,9 +1,8 @@
 # ADR-0002: Modular monolith and delayed crate split
 
-**Status:** Proposed
-**Owner direction (2026-10-20):** Accepted in principle; line-by-line review pending.
+**Status:** Proposed (pending adoption)
 **Date:** 2026-10-20
-**Deciders:** `r31nu11` (repository owner), project engineers
+**Deciders:** `r31nu11` (project maintainer)
 **Related:** [ARCHITECTURE.md](../ARCHITECTURE.md), [ROADMAP.md](../ROADMAP.md)
 
 ## Context

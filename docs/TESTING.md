@@ -85,8 +85,8 @@ Hardware tests are manual and recorded, not hidden in CI:
   machine.
 - Engine discovery when no engine is installed.
 - Device enumeration with both Intel and NVIDIA Vulkan adapters visible.
-- A small-model smoke run on CPU and at least one GPU backend, only with owner
-  authorization.
+- A small-model smoke run on CPU and at least one GPU backend, only with
+  maintainer approval.
 - Cleanup after success, failure, timeout, and interrupt.
 
 A hardware test record includes the date, machine, OS/kernel, driver, engine
@@ -139,7 +139,7 @@ is not evidence about inference performance.
 ## 7. Failure and flakiness policy
 
 - A flaky test is a defect. Marking it ignored requires a linked issue and an
-  owner.
+  assigned maintainer.
 - Timeouts must be explicit and generous enough for slow CI, but a timeout is a
   failure unless the test is specifically testing timeout behavior.
 - Tests that depend on wall-clock performance use loose bounds and are never the

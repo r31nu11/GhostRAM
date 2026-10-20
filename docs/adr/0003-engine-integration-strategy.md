@@ -1,9 +1,8 @@
 # ADR-0003: Process-based engine integration, official llama.cpp first
 
-**Status:** Proposed
-**Owner direction (2026-10-20):** Accepted in principle; line-by-line review pending.
+**Status:** Proposed (pending adoption)
 **Date:** 2026-10-20
-**Deciders:** `r31nu11` (repository owner), project engineers
+**Deciders:** `r31nu11` (project maintainer)
 **Related:** [ENGINE_SUPPORT.md](../ENGINE_SUPPORT.md), [research notes](../research/2026-10-20-engine-landscape.md)
 
 ## Context
@@ -83,10 +82,12 @@ Follow-up:
 
 - Define the adapter contract and fake engine in Stage 04.
 - Choose and pin the first engine build during Stage 04 integration, after the
-  build/checksum/runtime/launch checks, and only with separate owner authorization.
+  build/checksum/runtime/launch checks, and only with separate maintainer
+  approval.
 - Perform the first installation and smoke test in Stage 04 or later, never in
   Stage 01.
-- Validate the official CUDA 12.8 and Vulkan builds only with owner authorization.
+- Validate the official CUDA 12.8 and Vulkan builds only with maintainer
+  approval.
 - Revisit FFI only if a documented capability cannot be achieved through the
   process boundary.
 - Revisit bundling or managed downloads only after the external-detection MVP

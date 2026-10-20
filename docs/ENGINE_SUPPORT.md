@@ -38,14 +38,17 @@ A row may mix labels; each claim keeps its own label.
 6. **Evaluate PrismML later as an optional adapter/profile**, not as the default
    engine. It is upstream llama.cpp plus additional low-bit formats and drafters;
    its value on 4 GiB Pascal must be measured.
-7. **Pin and fingerprint every engine build.** Do not build tests around
-   "latest". No specific build is pinned in Stage 00; select the first baseline
-   during Stage 04 integration after verifying the build, checksum, dependencies,
-   device visibility, and launch.
-8. **Probe capabilities per build.** Never infer a build's support solely from
-   the engine family or from a flag appearing in `--help`.
+7. **Pin and record the identity of every engine build.** Do not build tests
+   around "latest". Record the executable hash and known provenance, and keep
+   installation paths and device observations separate. No specific build is
+   pinned in Stage 00; select the first baseline during Stage 04 integration
+   after verifying the build, checksum, dependencies, device visibility, and
+   launch.
+8. **Record capabilities per build and runtime context.** Never infer a build's
+   support solely from the engine family, from a flag appearing in `--help`, or
+   from a probe on a different backend or device.
 9. **Do not install an engine in Stage 01.** The first installation and smoke test
-   belong to Stage 04 or later with separate owner authorization.
+   belong to Stage 04 or later with separate maintainer approval.
 10. **Detect external installations in the MVP.** Do not bundle engine binaries. A
     later voluntary download of a verified build into a managed directory requires
     explicit consent, checksums, and a license review.
@@ -175,7 +178,7 @@ necessarily the resolved layer count. This is an open measurement problem.
 - A native build with `-DCMAKE_CUDA_ARCHITECTURES=61` is expected to work with
   CUDA 12.x and may avoid JIT and host/device architecture mismatches. It was not
   built because `nvcc`, `cmake`, and `ninja` are not installed, and installing
-  them requires owner authorization.
+  them requires maintainer approval.
 - The distro repository currently offers `cuda 13.4.3`, which is not suitable for
   a Pascal-targeted build. A CUDA 12.x toolkit would have to come from NVIDIA's
   archive or another explicitly approved source.
@@ -305,7 +308,7 @@ tests and a maintenance review.
 
 | Measurement | Official llama.cpp | PrismML fork | Notes |
 | --- | --- | --- | --- |
-| Build identity | `--version`, `/props` `build_info`, binary SHA-256 | Same; fork tag/commit | Record both upstream base and fork release. |
+| Build identity | `--version`, `/props` `build_info`, binary SHA-256 | Same; fork tag/commit | Record release tag or source commit when available; keep the install path separate. |
 | Device visibility | `--list-devices`, startup logs | Same | Vulkan exposes Intel and NVIDIA. |
 | Prompt throughput | `llama-bench -p ... -n 0 -o json`; server `prompt_per_second` | Same | Keep prompt and generation separate. |
 | Generation throughput | `llama-bench -p 0 -n ... -o json`; server `predicted_per_second` | Same | `llama-bench` excludes sampling/tokenization. |

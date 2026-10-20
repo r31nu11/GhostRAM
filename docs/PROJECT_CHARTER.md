@@ -1,9 +1,8 @@
 # GhostRAM project charter
 
-**Status:** Stage 00 proposal, awaiting human owner review.
+**Status:** Stage 00 proposal; pending formal acceptance.
 **Last substantive revision:** 2026-10-20.
-**Owner:** the human repository owner. AI agents act as technical leads and
-repository engineers under that authority.
+**Maintainer:** `r31nu11` (project maintainer).
 
 ## 1. Purpose
 
@@ -105,8 +104,8 @@ future stage reports produce evidence.
 8. **Boring architecture first.** Use the smallest number of crates and
    abstractions that keeps boundaries testable; split later when evidence
    demands it.
-9. **Human authority.** The owner approves milestones, hardware validation,
-   promotion to `main`, and public releases.
+9. **Maintainer approval.** The project maintainer approves milestones, hardware
+   validation, promotion to `main`, and public releases.
 
 ## 6. MVP definition
 
@@ -147,7 +146,7 @@ GhostRAM will not, in the MVP or near term:
 - support every engine, backend, quantization, or operating system;
 - treat a successful process exit as proof of usable performance;
 - treat a documented architecture as an experimentally validated one;
-- publish releases or tags without human approval.
+- publish releases or tags without maintainer approval.
 
 ## 8. Success criteria for the alpha
 
@@ -208,17 +207,18 @@ These criteria require hardware tests that Stage 00 did not perform.
 
 ## 11. Decision rights and governance
 
-- The owner (`r31nu11`) approves architecture changes, stage acceptance, promotion
-  to `main`, version numbers, tags, and public releases. Promotion, tag, and
-  release are separate approvals; stage acceptance does not authorize a push, tag,
-  or release.
-- AI agents may propose decisions through ADRs and implement accepted stages.
+- The project maintainer (`r31nu11`) approves architecture changes, stage
+  acceptance, promotion to `main`, version numbers, tags, and public releases.
+  Promotion, tag, and release are separate approvals; stage acceptance does not
+  authorize a push, tag, or release.
+- Contributors and automated tools may propose decisions through ADRs and
+  implement accepted stages.
 - A change to an established architectural decision requires a superseding ADR
   with context, reasons, consequences, and migration impact.
 - A stage is not accepted because code exists. Its acceptance criteria, tests,
   report, status, and roadmap must agree.
 - Destructive or externally visible actions (push, publish, install, driver
-  change) require explicit authorization.
+  change) require explicit maintainer approval.
 
 ## 12. Research questions
 
@@ -250,21 +250,21 @@ rule. The initial experiment sketches are in
 - **The application control plane is separate from the engine process.** Engine
   crashes must not take down GhostRAM's stored history.
 
-## 14. Owner decisions and remaining questions
+## 14. Project decisions and remaining questions
 
-The owner (`r31nu11`) recorded these decisions on 2026-10-20. They are product
+The project maintainer recorded these decisions on 2026-10-20. They are product
 direction, not measured results.
 
-| Question | Owner decision |
+| Question | Decision |
 | --- | --- |
 | Which engine build is pinned first? | None yet. Defer the version/binary choice to the integration stage, where build, checksum, dependencies, and launch can be verified. |
-| When is an engine/model installed? | Not in Stage 01. The first installation and smoke test belong to Stage 04 or later, after the adapter exists, with separate owner permission. |
+| When is an engine/model installed? | Not in Stage 01. The first installation and smoke test belong to Stage 04 or later, after the adapter exists, with separate maintainer approval. |
 | Does GhostRAM bundle an engine? | Not in the MVP. Detect external installations first. A later voluntary download of a verified build into a GhostRAM-managed directory may be considered. |
 | What speed is "usable"? | No universal number without measurements. Collect real laptop results first, then define criteria by hardware and task profile. |
 | When is the GTX 1070 tested? | After the basic diagnostic and execution chain works on the laptop, but before serious performance claims and the first stable release. |
 | Which Linux packaging format? | Still open. Decide with the Stage 08 packaging work. |
 
-Remaining owner decisions:
+Remaining decisions:
 
 1. Which packaging format and update channel to use in Stage 08.
 2. Which exact engine build passes the Stage 04 integration checks and becomes the

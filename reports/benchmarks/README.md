@@ -44,8 +44,9 @@ model in the filename. Record the exact engine build and model hash inside.
    change a decision.
 2. **Environment** — machine, OS/kernel, CPU, RAM, swap, GPU, VRAM, driver,
    Vulkan/CUDA runtime, power state, governor.
-3. **Engine and model identity** — executable hash, version/build info, release
-   tag or commit, model path/hash, quantization, context limit.
+3. **Engine, installation, and model identity** — executable hash, version/build
+   info, release tag or commit when available, installation path and discovery
+   method, model path/hash, quantization, and context limit.
 4. **Configuration** — exact resolved arguments, including defaults filled by the
    adapter and values adjusted by the engine. State whether `--fit` was disabled.
 5. **Workload** — prompt source/hash, token counts, generation length, sampling,

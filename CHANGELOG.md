@@ -26,20 +26,25 @@ documentation foundation only; it is not a runnable product.
   contracts, explicitly marked as not yet available.
 - Stage report template, Stage 00 report, and benchmark report layout.
 - Architecture decision records for workflow, crate decomposition, engine
-  integration, measurement provenance, and build pinning.
+  integration, measurement provenance, and build identity.
 
 ### Changed
 
 - Expanded `README.md` from a placeholder into the public project overview.
 - Established `dev` as the development/integration branch; `main` remains the
-  owner-accepted working/stable checkpoint branch.
-- Recorded the owner's Stage 00 direction: no engine pinned or installed in
+  maintainer-accepted working/stable checkpoint branch.
+- Recorded the Stage 00 project direction: no engine pinned or installed in
   Stage 01, no engine bundling in the MVP, and no universal speed threshold
   before measurements.
-- Corrected the two unpublished Stage 00 commits to the owner's Git identity
+- Corrected the two unpublished Stage 00 commits to the maintainer's Git identity
   without changing their trees, messages, or order.
-- Clarified that pushes, tags, and GitHub Releases require separate owner
+- Clarified that pushes, tags, and GitHub Releases require separate maintainer
   approval; stage acceptance is not a release.
+- Standardized the documentation set on project voice and removed approval-history
+  metadata from the ADRs.
+- Refined ADR-0005 to separate immutable engine build identity from installation
+  records and timestamped capability observations, and aligned `ARCHITECTURE.md`
+  with that model.
 
 ### Fixed
 

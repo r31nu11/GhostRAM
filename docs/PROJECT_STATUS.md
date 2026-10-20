@@ -2,28 +2,25 @@
 
 **Snapshot date:** 2026-10-20.
 **Current stage:** Stage 00 — Technical Reconnaissance and Project Charter.
-**Stage state:** Documentation and repository foundation complete; **awaiting
-human review and acceptance**.
-**Current branch:** `dev`.
-**Stage 00 content commit (identity-corrected):**
-`f0f9a8135715037b4dc81d4df0eb986ce90b6d69`.
-**Stage 00 status/report commit (identity-corrected):**
-`b964fad3ed8810833a8a415f06b21d0748fd2686`.
-**Repository review correction commit:** the newest commit on `dev`; see
-`git log --oneline --decorate -5`.
-**Working tree:** clean after the review correction commit.
-**Upstream:** not pushed; `dev` is ahead of `origin/dev`.
+**Stage state:** Documentation and repository foundation complete; **pending
+formal acceptance**.
+**Branch:** `dev`.
+**Commit state:** local history; see `git log --oneline --decorate` for the
+latest commit. Nothing has been pushed.
+**Working tree:** clean at the completion of the documentation pass.
+**Upstream:** `origin/dev` and `origin/main` remain at the starting commit
+`bdfced9`.
 
 ## Summary
 
-Stage 00 established the project contract, architecture proposal, engine research,
-benchmark methodology, repository workflow, and quality checks. It did not create
-a Rust workspace, install an inference engine, download a model, or run a
-benchmark.
+Stage 00 established the project contract, architecture proposal, engine
+research, benchmark methodology, repository workflow, and quality checks. It did
+not create a Rust workspace, install an inference engine, download a model, or
+run a benchmark.
 
-The repository started from a single `Initial commit` containing only
-`LICENSE` (Apache-2.0) and a one-line `README.md`. Both `main` and `dev` pointed
-to that commit. No user changes were present.
+The repository started from a single `Initial commit` containing only `LICENSE`
+(Apache-2.0) and a one-line `README.md`. Both `main` and `dev` pointed to that
+commit. No user changes were present.
 
 ## Completed
 
@@ -43,17 +40,22 @@ to that commit. No user changes were present.
   contracts that explicitly state that no release exists yet.
 - Stage report template and Stage 00 report.
 - Repository-maintenance pass: corrected the two unpublished Stage 00 commits to
-  the owner's identity (`r31nu11`), preserved their trees/messages/order, and
-  clarified branch, push, tag, and release authority.
+  the maintainer's identity (`r31nu11`), preserved their trees/messages/order, and
+  clarified branch, push, tag, and release policy.
+- Documentation editorial pass: aligned the full Markdown set on project voice,
+  normalized ADR metadata, and refined ADR-0005's build-identity model.
 
-## Owner decisions (2026-10-20)
+## Project decisions (2026-10-20)
 
-- ADR-0001 through ADR-0005 are accepted in principle; line-by-line review and
-  formal stage acceptance remain pending.
-- No engine version/binary is pinned yet. Select the first baseline during Stage 04
-  integration after build, checksum, dependency, device, and launch checks.
+- ADR-0001 through ADR-0005 remain Proposed. Their technical direction was
+  reviewed in principle; formal adoption and Stage 00 acceptance remain pending.
+- Engine build identity is immutable and path-independent. Installation records
+  and timestamped capability observations are separate records tied to the
+  build.
+- No engine version/binary is pinned yet. Select the first baseline during Stage
+  04 integration after build, checksum, dependency, device, and launch checks.
 - Do not install an engine or model in Stage 01. The first installation and smoke
-  test belong to Stage 04 or later with separate owner permission.
+  test belong to Stage 04 or later with separate maintainer approval.
 - The MVP detects externally installed engines; do not bundle engine binaries. A
   later voluntary download of a verified build into a managed directory may be
   considered.
@@ -61,25 +63,26 @@ to that commit. No user changes were present.
   profile after real measurements.
 - Test the GTX 1070 after the laptop diagnostic/execution chain works, before
   serious performance claims and the first stable release.
-- `dev` is development/integration; `main` holds owner-accepted working/stable
-  checkpoints. Push, tag, and GitHub Release remain separate owner decisions.
+- `dev` is the development and integration branch; `main` holds
+  maintainer-accepted working/stable checkpoints. Push, tag, and GitHub Release
+  remain separate maintainer decisions.
 
 ## Not completed / deferred
 
 | Item | Reason | Target |
 | --- | --- | --- |
-| Rust workspace and `ghostram` binary | Stage 00 is documentation-only; crate split must follow ADR review | Stage 01 |
+| Rust workspace and `ghostram` binary | Stage 00 is documentation-only; crate split must follow ADR adoption | Stage 01 |
 | Hardware probe implementation | Requires workspace and tests | Stage 01 |
 | Engine baseline selection and pinning | Must follow Stage 04 build/checksum/dependency/device/launch checks | Stage 04 |
-| Engine installation/verification | Requires separate owner authorization; not part of Stage 01 | Stage 04+ |
+| Engine installation/verification | Requires separate maintainer approval; not part of Stage 01 | Stage 04+ |
 | GGUF metadata parser | Requires dependency evaluation and parser tests | Stage 02 |
 | Memory estimator | Needs metadata and calibration data | Stage 03 |
 | Engine process supervisor | Requires adapter contract and fake-engine tests | Stage 04 |
-| Benchmark execution | No engine/model installed; no hardware tests authorized | Stage 05 |
+| Benchmark execution | No engine/model installed; no hardware tests approved | Stage 05 |
 | Tuner and history store | Depends on measurement pipeline | Stage 06 |
 | Iced UI | Depends on stable core services | Stage 07 |
 | Windows support | Linux-first scope | Later |
-| Secondary GTX 1070 validation | Machine not accessed | Later, owner scheduled |
+| Secondary GTX 1070 validation | Machine not accessed | Later; schedule not set |
 
 ## Environment snapshot
 
@@ -104,18 +107,17 @@ These are observations, not guarantees that the values remain unchanged.
 
 | Check | Result |
 | --- | --- |
-| `python3 scripts/check_docs.py` | Passed: 27 Markdown files, 104 relative links, 20 required files |
+| `python3 scripts/check_docs.py` | Passed (documentation and link counts recorded in the Stage 00 report) |
 | `bash scripts/check-commit-range.sh bdfced9 HEAD` | Passed: all commit messages in the review range accepted |
 | Commit-message pass/fail fixtures | Valid accepted; invalid header rejected with exit 1 |
 | YAML parse of `.github/workflows/quality.yml` | Passed: jobs `documentation` and `commit-messages` |
 | `git diff --check` / cached check | Clean |
 | Shell syntax (`bash -n`) | Passed for both scripts and the hook |
 | Local Git identity | `r31nu11` / `r31nu11@mail.ru`; global config unchanged |
-| Identity-corrected commits | Author and committer are `r31nu11 <r31nu11@mail.ru>` |
-| Tree preservation | Old/new commit trees identical; messages, order, and author dates preserved |
+| Commit authorship | Author and committer use `r31nu11 <r31nu11@mail.ru>` |
 | Remote state | `origin/dev` and `origin/main` still at `bdfced9`; no push |
 | Rust format/lint/test | Not applicable: no Cargo workspace |
-| Hardware inference/benchmark | Not performed: no engine/model; expensive tests not authorized |
+| Hardware inference/benchmark | Not performed: no engine/model; expensive tests not approved |
 
 ## Known limitations and blockers
 
@@ -142,11 +144,11 @@ It should create only the crates justified by ADR-0002, implement a read-only
 discovery, model directories), add tests, and run on the primary laptop. It must
 not install engines or models, download anything, launch inference, or implement
 the optimizer. Engine installation and the first smoke test are deferred to Stage
-04 or later with separate owner permission.
+04 or later with separate maintainer approval.
 
 ## Update rules
 
 Update this file at the end of every stage. Record the actual branch, commit,
 validation results, blockers, and next stage. Do not mark a stage accepted before
-the human owner has reviewed it. Do not use this file as a substitute for the
-detailed stage report.
+the maintainer has completed formal review and acceptance. Do not use this file
+as a substitute for the detailed stage report.

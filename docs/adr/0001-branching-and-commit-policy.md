@@ -1,17 +1,16 @@
 # ADR-0001: Branching, commits, and stage workflow
 
-**Status:** Proposed
-**Owner direction (2026-10-20):** Accepted in principle; line-by-line review pending.
+**Status:** Proposed (pending adoption)
 **Date:** 2026-10-20
-**Deciders:** `r31nu11` (repository owner), project engineers
+**Deciders:** `r31nu11` (project maintainer)
 **Related:** [CONTRIBUTING.md](../CONTRIBUTING.md), [ROADMAP.md](../ROADMAP.md), [Stage 00 report](../../reports/stages/stage-00-technical-reconnaissance.md)
 
 ## Context
 
 The repository started from a single commit containing only `LICENSE` and a
 one-line `README.md`. Stage 00 introduces a large body of documentation that must
-remain reviewable by a human owner and usable by later agents without relying on
-chat history.
+remain reviewable by the maintainer and usable by later contributors without
+relying on undocumented context.
 
 The project needs:
 
@@ -26,10 +25,10 @@ The project needs:
 
 1. `dev` is the development and integration branch for ordinary and intermediate
    commits.
-2. `main` receives only owner-accepted, working/stable checkpoints. It changes only
-   by owner-approved promotion from `dev`.
-3. Promotion from `dev` to `main` requires owner acceptance and the applicable
-   validation. It is not automatic.
+2. `main` receives only maintainer-accepted, working/stable checkpoints. It
+   changes only by maintainer-approved promotion from `dev`.
+3. Promotion from `dev` to `main` requires maintainer acceptance and the
+   applicable validation. It is not automatic.
 4. Stage work may use short-lived task branches based on `dev`, named for the work
    (for example `stage-01-workspace` or `feat/probe-cpu`).
 5. Commits use Conventional Commits with the body sections `Changes:`, `Reason:`,
@@ -40,25 +39,25 @@ The project needs:
 7. Documentation checks and commit-range checks run in CI. Rust checks are added
    when a workspace exists.
 8. Pushes are never automatic. Pushing, changing remotes, force-pushing, and
-   rewriting published history require explicit owner authorization.
-9. Tags and GitHub Releases require separate explicit owner approval. Stage
+   rewriting published history require explicit maintainer authorization.
+9. Tags and GitHub Releases require separate explicit maintainer approval. Stage
    acceptance, a merge to `main`, or a release candidate does not authorize them.
 10. A documentation-only stage is not a stable application release.
-11. Every stage ends with a report, updated status/roadmap, recorded validation, and
-    owner review. Code volume is not an acceptance criterion.
-12. All commits use the owner's repository-local Git identity `r31nu11` with the
-    owner's confirmed email. Agent identities such as `GhostRAM Agent` are not
-    permitted.
+11. Every stage ends with a report, updated status/roadmap, recorded validation,
+    and maintainer review. Code volume is not an acceptance criterion.
+12. All commits use the maintainer's repository-local Git identity `r31nu11` with
+    the maintainer's confirmed email. Automated or invented identities such as
+    `GhostRAM Agent` are not permitted.
 
 ## Consequences
 
 Positive:
 
 - History explains intent and evidence, not only file changes.
-- The owner can review `dev` before promoting to `main`.
-- Agents have a repository-based source of truth.
+- The maintainer can review `dev` before promoting to `main`.
+- Contributors and automated tools have a repository-based source of truth.
 - Destructive or externally visible actions are gated.
-- Authorship and release authority are unambiguous.
+- Authorship and release approval are unambiguous.
 
 Negative:
 

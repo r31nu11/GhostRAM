@@ -9,10 +9,9 @@ previous stage's claims without re-verifying them.
 # Stage NN — Title
 
 **Date:** YYYY-MM-DD
-**Owner:** human repository owner
-**Author:** name or agent
+**Maintainer:** `r31nu11` (project maintainer)
 **Branch:** `branch-name`
-**Status:** In progress | Complete pending review | Accepted | Blocked
+**Status:** In progress | Complete, pending acceptance | Accepted | Blocked
 
 ## 1. Stage identifier and title
 
@@ -64,12 +63,13 @@ so and explain why. Do not report an estimate as a measurement.
 
 List each test, the prerequisite that was missing, and the risk of leaving it
 untested. Include environment limitations such as no GPU, no model, or no
-authorization.
+approval.
 
 ## 10. Known bugs, limitations, and unresolved questions
 
-List defects, incomplete behavior, uncertainty, and decisions needed from the
-owner. Distinguish a known limitation from an unverified hypothesis.
+List defects, incomplete behavior, uncertainty, and decisions requiring
+maintainer direction. Distinguish a known limitation from an unverified
+hypothesis.
 
 ## 11. Current branch and commit hash
 
@@ -79,8 +79,8 @@ happen.
 
 ## 12. Git working-tree status
 
-State the observed `git status` result. A clean tree at hand-off is expected; if it
-is not clean, explain every remaining path.
+State the observed `git status` result. A clean tree at completion is expected; if
+it is not clean, explain every remaining path.
 
 ## 13. Documentation updated
 
@@ -90,12 +90,12 @@ updated but were not.
 
 ## 14. Recommended next stage
 
-Name the next stage, its prerequisites, and the owner decisions required before it
-starts. Link to the roadmap entry.
+Name the next stage, its prerequisites, and the maintainer decisions or approvals
+required before it starts. Link to the roadmap entry.
 
 ---
 
-## Hand-off checklist
+## Completion checklist
 
 - [ ] Acceptance criteria checked with evidence.
 - [ ] Validation commands and observed results recorded.
@@ -103,5 +103,5 @@ starts. Link to the roadmap entry.
 - [ ] Changelog updated when user-visible behavior changed.
 - [ ] ADRs added or superseded as needed.
 - [ ] Working tree clean or remaining paths explained.
-- [ ] Human owner review requested.
-- [ ] No push, tag, release, install, or system change without authorization.
+- [ ] Maintainer acceptance recorded.
+- [ ] No push, tag, release, install, or system change without approval.

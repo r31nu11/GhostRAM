@@ -1,8 +1,8 @@
 # Releasing
 
-**Status:** Stage 00 policy. No version has been tagged or released. The owner is
-`r31nu11`. The first tag and any GitHub Release require explicit owner approval
-separate from stage acceptance and promotion.
+**Status:** Stage 00 policy. No version has been tagged or released. The project
+maintainer is `r31nu11`. The first tag and any GitHub Release require explicit
+maintainer approval separate from stage acceptance and promotion.
 
 ## 1. Versioning
 
@@ -26,12 +26,12 @@ the code change is small.
 ## 2. Branch and tag policy
 
 - Development and intermediate commits integrate on `dev`.
-- `main` receives only owner-accepted, working/stable checkpoints.
-- Promotion from `dev` to `main` requires owner acceptance and applicable
+- `main` receives only maintainer-accepted, working/stable checkpoints.
+- Promotion from `dev` to `main` requires maintainer acceptance and applicable
   validation. It is not automatic.
 - A release is tagged from `main` at a reviewed commit.
 - Tags are annotated and signed where the release process supports it.
-- A tag or GitHub Release requires **separate explicit owner approval** after
+- A tag or GitHub Release requires **separate explicit maintainer approval** after
   promotion. Stage acceptance does not authorize either.
 - Pushes are not automatic.
 - A documentation-only stage is not a stable application release.
@@ -58,11 +58,13 @@ Do not claim performance improvements without a benchmark report that meets
 
 ### Pre-release
 
-- [ ] Stage acceptance criteria are met and the owner has reviewed the stage.
+- [ ] Stage acceptance criteria are met and the maintainer has reviewed the
+      stage.
 - [ ] `dev` is merged/promoted as approved; the release commit is on `main`.
 - [ ] Working tree is clean and the commit is the intended one.
-- [ ] Author and committer use the owner's confirmed identity, not an agent.
-- [ ] The owner has approved publication separately from stage acceptance.
+- [ ] Author and committer use the maintainer's confirmed identity; no automated
+      or invented identity.
+- [ ] The maintainer has approved publication separately from stage acceptance.
 - [ ] Version is updated in the source of truth.
 - [ ] Changelog is complete and dated.
 - [ ] `cargo fmt --all -- --check` passes.
@@ -84,10 +86,10 @@ Do not claim performance improvements without a benchmark report that meets
 - [ ] Run the documented installation and uninstall flow from the artifact.
 - [ ] Preserve the build log and dependency lockfile.
 
-### Publication (owner `r31nu11` only)
+### Publication (maintainer `r31nu11` only)
 
-- [ ] Owner approves the version, notes, artifacts, publication channel, tag, and
-      GitHub Release separately from stage acceptance and promotion.
+- [ ] The maintainer approves the version, notes, artifacts, publication channel,
+      tag, and GitHub Release separately from stage acceptance and promotion.
 - [ ] Create the annotated tag and release.
 - [ ] Upload artifacts and checksums to the approved channel.
 - [ ] Verify the published files match the local hashes.
@@ -104,7 +106,7 @@ Do not claim performance improvements without a benchmark report that meets
 ## 5. What a release must not do
 
 - Treat stage acceptance or a merge to `main` as permission to tag or publish.
-- Publish a tag or GitHub Release without separate owner approval.
+- Publish a tag or GitHub Release without separate maintainer approval.
 - Describe an untested platform as supported.
 - Bundle an engine or model without a license review and explicit notices.
 - Hide a failed test, a known crash, or a missing backend.
@@ -135,4 +137,4 @@ another GPU is not automatically supported here.
 | Artifact | None. |
 | Checksums | None. |
 | Changelog release section | None; only `Unreleased` documentation entries. |
-| Owner approval | Not requested; Stage 00 is awaiting review. |
+| Publication approval | Not requested; Stage 00 is pending formal acceptance. |

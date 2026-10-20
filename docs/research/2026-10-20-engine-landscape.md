@@ -109,7 +109,7 @@ Implications:
 | Models | None found in inspected common directories | No model validation possible. |
 
 Installing these tools, downloading an engine, or downloading a model requires
-explicit owner authorization. Stage 00 did none of it.
+explicit approval. Stage 00 did none of it.
 
 ## 5. Official llama.cpp
 
@@ -337,8 +337,9 @@ maintenance.
 
 ## 10. Cross-cutting findings and risks
 
-1. **Capability is per build.** Family documentation cannot answer whether this
-   executable on this driver enables a backend or accepts a model type.
+1. **Capability is per build and runtime context.** Family documentation cannot
+   answer whether this executable on this backend, device, and driver enables a
+   capability or accepts a model type.
 2. **CUDA 13.x is not a Pascal build toolchain.** The version is recent but
    cannot target compute capability 6.1; any CUDA 13.x-labeled prebuilt still
    requires artifact-level inspection and testing.

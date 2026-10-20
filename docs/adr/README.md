@@ -8,24 +8,26 @@ for a stage report.
 
 | ADR | Title | Status |
 | --- | --- | --- |
-| [0001](0001-branching-and-commit-policy.md) | Branching, commits, and stage workflow | Proposed; accepted in principle |
-| [0002](0002-modular-monolith-and-crate-split.md) | Modular monolith and delayed crate split | Proposed; accepted in principle |
-| [0003](0003-engine-integration-strategy.md) | Process-based engine integration, official llama.cpp first | Proposed; accepted in principle |
-| [0004](0004-measurement-provenance.md) | Separate estimates from measurements and preserve provenance | Proposed; accepted in principle |
-| [0005](0005-pinned-engine-builds.md) | Pin and fingerprint engine builds; probe capabilities per build | Proposed; accepted in principle |
+| [0001](0001-branching-and-commit-policy.md) | Branching, commits, and stage workflow | Proposed (pending adoption) |
+| [0002](0002-modular-monolith-and-crate-split.md) | Modular monolith and delayed crate split | Proposed (pending adoption) |
+| [0003](0003-engine-integration-strategy.md) | Process-based engine integration, official llama.cpp first | Proposed (pending adoption) |
+| [0004](0004-measurement-provenance.md) | Separate estimates from measurements and preserve provenance | Proposed (pending adoption) |
+| [0005](0005-pinned-engine-builds.md) | Separate engine build identity from installation and capability observations | Proposed (pending adoption) |
 
-"Proposed" means the decision is part of the Stage 00 review package. "Accepted in
-principle" means the owner (`r31nu11`) supports the direction but has not completed
-a line-by-line review. A proposed ADR is binding for work done under it until the
-owner changes or supersedes it. Decisions must be revisited when measurements show
-that an assumption is wrong.
+"Proposed" means the decision is part of the Stage 00 review package and has not
+been adopted. Proposed ADRs describe the project's current intended direction and
+should guide work until they are adopted, superseded, or withdrawn. Decisions
+must be revisited when measurements show that an assumption is wrong.
+
+Do not record approval-history metadata in an ADR. Use the status field to show
+whether a decision is proposed, adopted, rejected, superseded, or deprecated.
 
 ## Required structure
 
 Every ADR contains:
 
-- `Status:` — Proposed, Accepted, Rejected, Superseded, or Deprecated, optionally
-  with an owner-direction note such as "accepted in principle";
+- `Status:` — Proposed (pending adoption), Accepted, Rejected, Superseded, or
+  Deprecated;
 - `Date:` — the decision date in ISO 8601;
 - `## Context` — the forces and evidence;
 - `## Decision` — the choice;
@@ -48,17 +50,17 @@ Additional sections such as `## Alternatives considered`, `## References`, or
 6. Update the index when an ADR is added or its status changes.
 7. Keep decisions revisable. A measurement or integration result may justify a
    superseding ADR; do not silently rewrite an accepted decision.
-8. The repository owner is `r31nu11`. Commit identity and release authority follow
-   [ADR-0001](0001-branching-and-commit-policy.md).
+8. The project maintainer is `r31nu11`. Commit identity and release approval
+   follow [ADR-0001](0001-branching-and-commit-policy.md).
 
 ## Template
 
 ```markdown
 # ADR-NNNN: Title
 
-**Status:** Proposed
+**Status:** Proposed (pending adoption)
 **Date:** YYYY-MM-DD
-**Deciders:** `r31nu11` (repository owner), project engineers
+**Deciders:** `r31nu11` (project maintainer)
 **Related:** links to ADRs, research, or stage reports
 
 ## Context

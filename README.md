@@ -4,11 +4,12 @@ GhostRAM is a planned open-source Rust application for intelligent local LLM
 inference configuration, resource management, benchmarking, and optimization on
 constrained hardware.
 
-> **Status: Stage 00 foundation only.** There is no runnable GhostRAM binary,
-> no inference engine integration, and no GUI yet. The repository currently
-> contains the project charter, architecture, research, workflow, and quality
-> checks that later stages will implement against. Do not follow installation or
-> usage instructions from other projects as if they were GhostRAM instructions.
+> **Status: Stage 00 documentation foundation; pending formal acceptance.** There
+> is no runnable GhostRAM binary, no inference engine integration, and no GUI yet.
+> The repository currently contains the project charter, architecture, research,
+> workflow, and quality checks that later stages will implement against. Do not
+> follow installation or usage instructions from other projects as if they were
+> GhostRAM instructions.
 
 ## What GhostRAM is intended to do
 
@@ -34,8 +35,8 @@ GhostRAM does **not** claim that it can:
 - replace llama.cpp or another inference engine,
 - automatically produce a good result on every hardware combination.
 
-Claims will be tied to recorded experiments, engine versions, hardware, and
-configuration. Unknowns are documented as unknowns.
+Claims will be tied to recorded experiments, engine build identities, hardware,
+and configuration. Unknowns are documented as unknowns.
 
 ## Primary development target
 
@@ -93,7 +94,7 @@ For users and future contributors:
 - [Contributing](docs/CONTRIBUTING.md) — branches, commits, reviews, and docs.
 - [Testing](docs/TESTING.md) — current checks and future test strategy.
 - [Releasing](docs/RELEASING.md) — versioning and release checklist.
-- [Architecture decision records](docs/adr/README.md) — accepted and proposed decisions.
+- [Architecture decision records](docs/adr/README.md) — proposed decisions and the ADR process.
 
 ## Development in Stage 00
 
@@ -112,12 +113,12 @@ git config core.hooksPath .githooks
 ```
 
 Development and intermediate commits happen on `dev` or on temporary branches
-based on `dev`. `main` receives only owner-accepted, working/stable checkpoints.
-Promotion from `dev` to `main` requires owner acceptance and applicable
-validation. Pushes are not automatic. Tags and GitHub Releases require separate
-explicit owner approval; a documentation-only stage is not a stable application
-release. The repository owner is `r31nu11`, and commits use the owner's local Git
-identity.
+based on `dev`. `main` receives only maintainer-accepted, working/stable
+checkpoints. Promotion from `dev` to `main` requires maintainer acceptance and
+applicable validation. Pushes are not automatic. Tags and GitHub Releases require
+separate explicit maintainer approval; a documentation-only stage is not a stable
+application release. The project maintainer is `r31nu11`, and commits use the
+maintainer's repository-local Git identity.
 
 ## Safety
 

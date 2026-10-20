@@ -24,7 +24,7 @@ These observations were made on 2026-10-20 and may change:
 | A prebuilt CUDA binary does not start | `libcudart`, cuBLAS, or a compatible runtime may be missing. | The official CUDA archive ships runtime assets separately; a toolkit alone is not the only option. This was not tested locally. |
 | No model is listed | No GGUF model was found in the inspected directories. | GhostRAM does not download models silently. The future catalog will report absent models as absent, not as an error. |
 | No engine is found | No llama.cpp, Ollama, or other engine was installed. | Engine installation is a future, explicit step. Stage 00 did not install one. |
-| `cmake`, `ninja`, or `nvcc` is missing | The development toolchain is not installed. | Building an engine locally requires explicit authorization and additional packages. End users will not need a compiler for GhostRAM. |
+| `cmake`, `ninja`, or `nvcc` is missing | The development toolchain is not installed. | Building an engine locally requires explicit maintainer approval and additional packages. End users will not need a compiler for GhostRAM. |
 
 ## 3. Safe diagnostics
 

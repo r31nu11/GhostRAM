@@ -4,8 +4,8 @@
 application code yet; the workflow below applies to documentation, research, and
 future implementation stages.
 
-The repository owner is `r31nu11` (GitHub account `r31nu11`). Branches, commits,
-and releases are governed by the owner's decisions below.
+The project maintainer is `r31nu11` (GitHub account `r31nu11`). Branches,
+commits, and releases follow the policy below.
 
 ## 1. Before you start
 
@@ -13,15 +13,15 @@ and releases are governed by the owner's decisions below.
    relevant stage in [ROADMAP.md](ROADMAP.md).
 2. Check `git status`, the current branch, and recent commits. Preserve unrelated
    work.
-3. If a stage instruction conflicts with the repository, stop and ask the human
-   owner. Do not silently rewrite an established decision.
+3. If a stage instruction conflicts with the repository, stop and request
+   maintainer direction. Do not silently rewrite an established decision.
 4. Do not install packages, download models or engines, change drivers, or run
-   expensive benchmarks without explicit permission.
+   expensive benchmarks without explicit approval.
 
 ## 2. Branch model
 
 ```text
-main        owner-accepted, working/stable checkpoints only
+main        maintainer-accepted, working/stable checkpoints only
   │
   └── dev   integration branch for the current stage
         │
@@ -30,14 +30,15 @@ main        owner-accepted, working/stable checkpoints only
 
 - `dev` is the development and integration branch. Ordinary and intermediate
   commits belong here or on a short-lived task branch based on it.
-- `main` receives only owner-accepted, working/stable checkpoints.
-- Promotion from `dev` to `main` requires owner acceptance and the applicable
+- `main` receives only maintainer-accepted, working/stable checkpoints.
+- Promotion from `dev` to `main` requires maintainer acceptance and the applicable
   validation. It is not automatic and does not happen merely because a stage
   report exists.
 - Pushes are not automatic. Do not push, force-push, rewrite published history,
-  create a tag, or publish a GitHub Release without explicit owner authorization.
-- Tags and GitHub Releases require **separate** explicit owner approval. A stage
-  acceptance or a merge to `main` does not authorize a tag or release.
+  create a tag, or publish a GitHub Release without explicit maintainer
+  authorization.
+- Tags and GitHub Releases require **separate** explicit maintainer approval. A
+  stage acceptance or a merge to `main` does not authorize a tag or release.
 - A documentation-only stage is not a stable application release, even when its
   report is accepted.
 - Task branch names should describe the work, for example
@@ -50,11 +51,11 @@ experimental. Small documentation corrections may be committed directly to
 
 ## 3. Commit identity
 
-All commits must use the owner's repository-local Git identity:
+All commits must use the maintainer's repository-local Git identity:
 
 ```text
 name:  r31nu11
-email: the owner's confirmed address in the local Git configuration
+email: the maintainer's confirmed address in the local Git configuration
 ```
 
 Rules:
@@ -62,13 +63,14 @@ Rules:
 - Use `git config --local`; do not modify global Git configuration.
 - Do not commit as `GhostRAM Agent`, `agent@localhost`, or another invented
   identity.
-- If the local name or email is missing, agent-like, or unconfirmed, stop before
-  committing and ask the owner to configure it.
+- If the local name or email is missing, placeholder-like, or unconfirmed, stop
+  before committing and ask the maintainer to configure it.
 - Do not invent or guess an email address.
-- Do not alter the owner-created starting commit.
-- Rewriting unpublished commits changes their hashes. Do it only with owner
+- Do not alter the maintainer-created starting commit.
+- Rewriting unpublished commits changes their hashes. Do it only with maintainer
   authorization, preserve contents/messages/order, and verify the result.
-- Never rewrite a commit that has been pushed or shared without owner direction.
+- Never rewrite a commit that has been pushed or shared without maintainer
+  approval.
 
 The commit-message and commit-range scripts validate message format, not
 authorship. Authorship is verified with `git log --format=fuller` and
@@ -119,8 +121,8 @@ Validation:
 - A revert commit may be header-only. If it has a body, it still uses the three
   sections.
 - Do not add unrelated changes to a commit merely to make it larger.
-- Do not add AI attribution unless the human owner asks for it; the commit must
-  not claim a test or review that did not happen.
+- Do not add tool or model attribution unless the maintainer explicitly requests
+  it; the commit must not claim a test or review that did not happen.
 
 ### Example
 
@@ -170,12 +172,13 @@ Before requesting review, verify:
 - [ ] `cargo fmt`, `cargo clippy`, and `cargo test` pass once a workspace exists.
 - [ ] `python3 scripts/check_docs.py` passes.
 - [ ] Commit messages in the range pass `scripts/check-commit-range.sh`.
-- [ ] Author and committer are the owner's confirmed identity, not an agent.
+- [ ] Author and committer use the maintainer's confirmed identity; no
+      automated or invented identity.
 - [ ] Documentation links resolve and claims are supported by evidence.
 - [ ] No secrets, model weights, engine binaries, or personal data are committed.
 - [ ] `PROJECT_STATUS.md` and `ROADMAP.md` reflect reality.
 - [ ] The stage report is complete, including what was not done.
-- [ ] No push, tag, release, or system change occurred without authorization.
+- [ ] No push, tag, release, or system change occurred without approval.
 
 The reviewer checks the evidence, not only the diff. A green check does not
 compensate for a missing hardware test or an unsupported performance claim.
@@ -208,14 +211,14 @@ compensate for a missing hardware test or an unsupported performance claim.
 1. Commit coherent changes on the task branch.
 2. Run the applicable checks and record exact results.
 3. Update the stage report, `PROJECT_STATUS.md`, and `ROADMAP.md`.
-4. Merge into `dev`, or ask the owner to merge. Do not promote `dev` to `main`
+4. Merge into `dev`, or request maintainer merge. Do not promote `dev` to `main`
    yourself.
-5. A stage is complete only after the owner reviews the report and accepts the
-   result.
-6. Promotion of `dev` to `main` requires owner acceptance and applicable
+5. A stage is complete only after the maintainer reviews the report and accepts
+   the result.
+6. Promotion of `dev` to `main` requires maintainer acceptance and applicable
    validation. It does not authorize a push, tag, or GitHub Release.
-7. Tags and GitHub Releases require separate explicit owner approval, even after
-   promotion.
+7. Tags and GitHub Releases require separate explicit maintainer approval, even
+   after promotion.
 
 ## 9. Questions and blockers
 

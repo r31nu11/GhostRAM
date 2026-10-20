@@ -39,10 +39,12 @@ Every run record must include:
   swap/zram, GPU model, VRAM, driver, Vulkan/OpenCL devices, storage path.
 - Power state (AC/battery), CPU governor, and any thermal or clock settings that
   were observed.
-- Engine family, executable path, binary SHA-256, version/build info, and visible
-  devices.
-- Backend and device selected, including the exact selector used when multiple
-  Vulkan devices exist.
+- Engine build identity: family, binary SHA-256, version/build info, and release
+  tag or source commit when available.
+- Installation record: executable path and discovery method.
+- Runtime context and capability observations: backend, selected device, driver
+  or runtime version, visible devices, and dependency evidence. Include the exact
+  device selector used when multiple Vulkan devices exist.
 - Model identity: path, file size, SHA-256, architecture, parameter count,
   quantization, context limit, and shard/draft files.
 - Exact resolved configuration: context, batch/ubatch, GPU layers, KV cache type,
@@ -104,9 +106,8 @@ Benchmarks on a laptop are noisy. At minimum:
 
 1. Run on AC power and record the power state. Do not compare battery and AC runs
    as if they were equivalent.
-2. Record the CPU governor and do not change it automatically. If the owner
-   authorizes a fixed governor for an experiment, record the change and restore
-   it.
+2. Record the CPU governor and do not change it automatically. If a fixed
+   governor is approved for an experiment, record the change and restore it.
 3. Close other heavy workloads and record obvious background activity.
 4. Run one inference engine at a time.
 5. Warm up the model and page cache, then state whether reported runs are cold or

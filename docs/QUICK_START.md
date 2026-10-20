@@ -6,7 +6,8 @@ release, not instructions that work today.
 
 Do not install an engine, download a model, or change system settings solely
 because this page describes a planned feature. Those actions require explicit
-owner or user authorization.
+user authorization. Within project development, engine or model installation also
+requires maintainer approval.
 
 ## 1. Planned first-run flow
 
