@@ -267,7 +267,8 @@ $ git diff --cached --check
 (no output after staging; exit 0)
 
 $ bash scripts/check-commit-range.sh bdfced9 HEAD
-<result recorded after the Stage 01 commit>
+check: ... (eight local commits, including ed96c19ea3a8)
+ok: all checked commit messages passed
 
 $ git config --local --get user.name
 r31nu11
@@ -278,7 +279,8 @@ r31nu11@mail.ru
 The commit-message checker fixtures were rerun during final validation; the valid
 message was accepted and the invalid message was rejected with exit 1. The result
 is recorded in the final hand-off because the fixtures are not part of the Rust
-test count.
+test count. The range check was run again through the report/status commit after
+that commit was created; the hand-off records the final observed result.
 
 ## 8. Hardware tests and measurements
 
@@ -365,10 +367,11 @@ benchmark results.
 
 **Branch:** `dev`.
 **Base commit:** `7d3e41940a25bb3d9845478b603a359a098c22af` (`docs(adr-0005): stabilize engine build identity`).
-**Content commit:** recorded after the Stage 01 content commit is created.
+**Content commit:** `ed96c19ea3a84f8c7e981a61f8c13764695eb13f`
+(`feat(stage-01): add diagnostic workspace and doctor command`).
 **Report/status commit:** the follow-up local commit that records the content
-commit hash and final working-tree state; it is the current HEAD when this report
-is read in a clean tree.
+commit hash and final working-tree state. It is the current HEAD when this report
+is read in a clean tree; the exact hash is visible with `git log -1`.
 
 The commits are local. No push, merge to `main`, tag, or GitHub Release was
 performed. `origin/dev` and `origin/main` remained at
@@ -377,10 +380,12 @@ performed. `origin/dev` and `origin/main` remained at
 ## 12. Git working-tree status
 
 At the start of Stage 01 the tree was clean at the base commit. During the work it
-contained the new workspace and documentation changes. The intended final state is
-clean after the content and report/status commits. The exact final `git status
---short` result is recorded in the hand-off; any remaining path would be
-unexpected and would not be silently discarded.
+contained the new workspace and documentation changes. After the content commit,
+the only remaining changes were the content-hash and final-state corrections in
+this report and `PROJECT_STATUS.md`. Those changes were committed as the
+report/status commit, leaving `git status --short` empty. The final hand-off
+records the observed clean state; any remaining path would be unexpected and was
+not silently discarded.
 
 ## 13. Documentation updated
 
@@ -430,7 +435,7 @@ Roadmap: [Stage 02](../../docs/ROADMAP.md#stage-02--gguf-model-catalog-and-ident
 - [x] `PROJECT_STATUS.md` and `ROADMAP.md` updated.
 - [x] Changelog updated when user-visible behavior changed.
 - [x] ADRs added or superseded as needed; existing ADRs accepted.
-- [ ] Working tree clean or remaining paths explained; recorded in the final
-  hand-off after commit.
+- [x] Working tree clean after the report/status commit; confirmed in the final
+  hand-off.
 - [ ] Maintainer acceptance recorded.
 - [x] No push, tag, release, install, or system change without approval.

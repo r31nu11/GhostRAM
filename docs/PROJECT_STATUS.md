@@ -5,9 +5,10 @@
 **Stage state:** Implementation and documentation complete; **pending formal
 acceptance**.
 **Branch:** `dev`.
-**Commit state:** local history; the Stage 01 content and report commits are
-recorded in section 11 of the Stage 01 report. Nothing has been pushed.
-**Working tree:** being finalized for the Stage 01 commit.
+**Commit state:** local history. The Stage 01 content commit is
+`ed96c19ea3a84f8c7e981a61f8c13764695eb13f`; the report/status commit follows it
+and is the current HEAD. Nothing has been pushed.
+**Working tree:** clean after the report/status commit.
 **Upstream:** `origin/dev` and `origin/main` remain at the starting commit
 `bdfced9`.
 
@@ -122,13 +123,13 @@ values remain unchanged.
 | `ghostram doctor` | Completed on the primary laptop; overall `available` |
 | `ghostram doctor --json` | Valid JSON; stdout contained only the envelope |
 | `python3 scripts/check_docs.py` | Passed: 29 Markdown files, 122 relative links, 24 required files |
-| `bash scripts/check-commit-range.sh bdfced9 HEAD` | Pending final run after the Stage 01 commit |
+| `bash scripts/check-commit-range.sh bdfced9 HEAD` | Passed for the content commit: all eight checked commit messages accepted; final range through the report commit is rerun after commit and recorded in the hand-off |
 | Commit-message fixtures | Passed: valid message accepted; invalid header rejected with exit 1 |
 | YAML parse of `.github/workflows/quality.yml` | Passed: jobs `commit-messages`, `documentation`, and `rust` |
 | `git diff --check` / cached check | Clean |
 | Shell syntax (`bash -n`) | Passed for both scripts and the hook |
 | Local Git identity | `r31nu11` / `r31nu11@mail.ru`; global config unchanged |
-| Commit authorship | To be verified after the Stage 01 commit |
+| Commit authorship | Content commit verified as `r31nu11 <r31nu11@mail.ru>` for author and committer; report commit uses the same local identity |
 | Remote state | `origin/dev` and `origin/main` still at `bdfced9`; no push |
 | Hardware inference/benchmark | Not performed: no engine/model; no approval requested |
 
