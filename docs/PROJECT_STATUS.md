@@ -5,8 +5,9 @@
 **Stage state:** Documentation and repository foundation complete; **awaiting
 human review and acceptance**.
 **Current branch:** `dev`.
-**Stage 00 content commit:** recorded in the Stage 00 report and in Git history.
-**Working tree:** clean after the Stage 00 status commit.
+**Stage 00 content commit:** `df0ad8ac9a62e73a9c1ecf503b431b7bd3ff5d19`.
+**Working tree:** clean after the Stage 00 status/report commit.
+**Upstream:** not pushed; `dev` is ahead of `origin/dev` by two Stage 00 commits.
 
 ## Summary
 
@@ -76,13 +77,14 @@ These are observations, not guarantees that the values remain unchanged.
 
 | Check | Result |
 | --- | --- |
-| `python3 scripts/check_docs.py` | See Stage 00 report for the observed result |
-| `bash scripts/check-commit-range.sh <base> HEAD` | See Stage 00 report |
-| Commit-message pass/fail fixtures | See Stage 00 report |
-| YAML parse of `.github/workflows/quality.yml` | See Stage 00 report |
-| `git diff --check` | See Stage 00 report |
+| `python3 scripts/check_docs.py` | Passed: 27 Markdown files, 103 relative links, 20 required files |
+| `bash scripts/check-commit-range.sh bdfced9 HEAD` | Passed: content commit message accepted |
+| Commit-message pass/fail fixtures | Valid accepted; invalid header, missing section, and missing footer rejected |
+| YAML parse of `.github/workflows/quality.yml` | Passed: jobs `documentation` and `commit-messages` |
+| `git diff --check` / cached check | Clean |
+| Shell syntax (`bash -n`) | Passed for both scripts and the hook |
 | Rust format/lint/test | Not applicable: no Cargo workspace |
-| Hardware inference/benchmark | Not performed: no engine/model, Stage 00 forbids expensive tests |
+| Hardware inference/benchmark | Not performed: no engine/model; expensive tests not authorized |
 
 ## Known limitations and blockers
 

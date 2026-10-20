@@ -175,7 +175,7 @@ root. A result is not claimed unless it was observed.
 
 ```text
 $ python3 scripts/check_docs.py
-PENDING
+ok: 27 Markdown files, 103 relative links, 20 required files
 ```
 
 ### 7.2 Commit-message checker
@@ -184,45 +184,57 @@ Valid fixture and invalid fixtures were created under `/tmp/opencode`, outside t
 repository.
 
 ```text
-$ bash scripts/check-commit-message.sh <valid-message>
-PENDING
+$ bash scripts/check-commit-message.sh /tmp/opencode/commit-valid.txt
+ok: commit message accepted
 
-$ bash scripts/check-commit-message.sh <invalid-header-message>
-PENDING
+$ bash scripts/check-commit-message.sh /tmp/opencode/commit-invalid-header.txt
+error: invalid header: Docs: bad header format
+expected: <type>(<scope>): <lowercase imperative description>
+allowed types: feat fix perf refactor test docs build ci chore revert
+exit=1
 
-$ bash scripts/check-commit-message.sh <missing-section-message>
-PENDING
+$ bash scripts/check-commit-message.sh /tmp/opencode/commit-missing-section.txt
+error: missing required section: Validation:
+exit=1
+
+$ bash scripts/check-commit-message.sh /tmp/opencode/commit-breaking-no-footer.txt
+error: breaking-change header requires a "BREAKING CHANGE: ..." footer
+exit=1
 ```
 
 ### 7.3 Shell syntax
 
 ```text
 $ bash -n scripts/check-commit-message.sh scripts/check-commit-range.sh .githooks/commit-msg
-PENDING
+shell syntax: ok
 ```
 
 ### 7.4 Workflow YAML parse
 
 ```text
-$ python3 -c 'import yaml; ...'
-PENDING
+$ python3 -c 'import yaml; data=yaml.safe_load(open(".github/workflows/quality.yml", encoding="utf-8")); assert "jobs" in data and "documentation" in data["jobs"] and "commit-messages" in data["jobs"]; print("yaml parse: ok; jobs:", ", ".join(data["jobs"]))'
+yaml parse: ok; jobs: documentation, commit-messages
 ```
 
 ### 7.5 Whitespace and status
 
+After the content commit `df0ad8a`:
+
 ```text
 $ git diff --check
-PENDING
+git diff --check: clean
 
 $ git status --short --branch
-PENDING
+## dev...origin/dev [ahead 1]
 ```
 
 ### 7.6 Commit range
 
 ```text
-$ bash scripts/check-commit-range.sh <base-sha> HEAD
-PENDING
+$ bash scripts/check-commit-range.sh bdfced9d7db49a1e2bdad5dd1602822734da33b1 HEAD
+check: df0ad8ac9a62 docs(stage-00): establish project foundation and engine research
+ok: commit message accepted
+ok: all checked commit messages passed
 ```
 
 ### 7.7 Rust checks
@@ -314,7 +326,8 @@ The following remain unmeasured:
 - **Branch:** `dev`.
 - **Starting commit:** `bdfced9d7db49a1e2bdad5dd1602822734da33b1`
   (`Initial commit`).
-- **Stage 00 content commit:** `PENDING`.
+- **Stage 00 content commit:** `df0ad8ac9a62e73a9c1ecf503b431b7bd3ff5d19`
+  (`docs(stage-00): establish project foundation and engine research`).
 - **Status/report commit:** the follow-up commit that records this hash; see
   `git log --oneline --decorate -3`.
 - **Push:** not performed. The branch still tracks `origin/dev` at the starting
@@ -329,11 +342,19 @@ contain its own hash. The final hand-off states the resulting HEAD.
 At the start of Stage 00, the tree was clean on `dev` at `bdfced9` with no
 untracked files.
 
-At validation time, the tree contained the intended Stage 00 additions and the
-`README.md` modification. The final status is recorded after the status commit:
+After the content commit `df0ad8a`, the tree was clean and `dev` was one commit
+ahead of `origin/dev`:
 
 ```text
-PENDING
+## dev...origin/dev [ahead 1]
+```
+
+The status/report commit contains only this report and `docs/PROJECT_STATUS.md`.
+After that commit, the tree was clean and `dev` was two commits ahead of
+`origin/dev`:
+
+```text
+## dev...origin/dev [ahead 2]
 ```
 
 No unrelated user changes were present. No files were removed.
@@ -401,5 +422,5 @@ answer the build/model authorization questions in section 10.
 - [x] No engine, model, package, driver, or system setting changed.
 - [x] No push, tag, or release performed.
 - [x] No benchmark result fabricated or implied.
-- [ ] Validation results filled in after the final command run.
+- [x] Validation results filled in after the final command run.
 - [ ] Human owner review and acceptance.
