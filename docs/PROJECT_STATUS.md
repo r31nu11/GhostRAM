@@ -105,7 +105,7 @@ These are observations, not guarantees that the values remain unchanged.
 | Check | Result |
 | --- | --- |
 | `python3 scripts/check_docs.py` | Passed: 27 Markdown files, 104 relative links, 20 required files |
-| `bash scripts/check-commit-range.sh bdfced9 HEAD` | Passed: all three commit messages in the review range accepted |
+| `bash scripts/check-commit-range.sh bdfced9 HEAD` | Passed: all commit messages in the review range accepted |
 | Commit-message pass/fail fixtures | Valid accepted; invalid header rejected with exit 1 |
 | YAML parse of `.github/workflows/quality.yml` | Passed: jobs `documentation` and `commit-messages` |
 | `git diff --check` / cached check | Clean |
