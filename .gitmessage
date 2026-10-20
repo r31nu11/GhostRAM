@@ -1,0 +1,21 @@
+# <type>(<scope>): <short imperative description>
+#
+# Allowed types: feat, fix, perf, refactor, test, docs, build, ci, chore, revert
+# Scope is optional and lowercase, for example: core, probe, models, engine,
+# planner, tuner, runtime, store, cli, ui, docs, build, ci, release.
+# Header limit: 100 characters. Do not end the subject with a period.
+# Use "!" before ":" for a breaking change and add a BREAKING CHANGE: footer.
+#
+# Leave one blank line after the header, then provide:
+#
+# Changes:
+# - Specific change.
+# - Specific change.
+#
+# Reason:
+# - Why the change is needed.
+#
+# Validation:
+# - Exact command executed: observed result.
+#
+# If a section does not apply, explain why instead of inventing information.

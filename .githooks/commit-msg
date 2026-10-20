@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Opt-in local hook. Enable with:
+#   git config core.hooksPath .githooks
+# This is intentionally not installed globally.
+set -euo pipefail
+
+repo_root=$(git rev-parse --show-toplevel)
+exec "$repo_root/scripts/check-commit-message.sh" "$1"

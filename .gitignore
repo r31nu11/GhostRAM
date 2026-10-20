@@ -1,0 +1,37 @@
+# Rust build output (workspace will be added in a later stage)
+/target/
+**/target/
+
+# Local model files. Tiny test fixtures may be committed explicitly.
+/models/
+**/models/
+*.gguf
+!tests/fixtures/**/*.gguf
+
+# Local benchmark artifacts; curated reports belong in reports/benchmarks/
+/reports/benchmarks/raw/
+/reports/benchmarks/local/
+/bench-results/
+/artifacts/
+/dist/
+
+# Local runtime state, configuration, and secrets
+/.ghostram/
+.env
+.env.*
+!.env.example
+
+# Logs and profiling data
+*.log
+*.profraw
+perf.data
+perf.data.*
+
+# Editor and OS noise
+.idea/
+.vscode/
+.DS_Store
+
+# Python bytecode from optional local tooling
+__pycache__/
+*.py[cod]
