@@ -27,8 +27,10 @@ executable contains code for compute capability 6.1.
 
 Three concepts need to remain distinct:
 
-1. **Build identity** — the executable or build artifact and its immutable
-   metadata, including its SHA-256.
+1. **Build identity** — for a single-executable artifact, the executable's
+   SHA-256. Engine family, version, release tag, source commit, artifact name,
+   target platform, build configuration, and dependency information are
+   associated metadata, not part of the identifier.
 2. **Installation record** — where a local copy was found, how it was discovered,
    and other installation-specific details.
 3. **Capability observation** — a timestamped result produced by probing that
@@ -39,47 +41,67 @@ or probing the same executable on another device appears to create a different
 build. That makes reproducibility and support claims depend on local filesystem
 layout and on a single observation.
 
+Provenance is often incomplete when a build is discovered externally. A release
+tag, source commit, or build configuration may be unknown at first and confirmed
+later. If those fields were inputs to the identifier, enriching or correcting
+metadata would change the identity of an unchanged executable and split its
+measurement history. The identifier therefore follows file content. Metadata may
+be added or corrected and recorded as a provenance revision, not as a new build.
+
+This ADR defines identity only for a single-executable artifact. If a future
+supported engine artifact consists of multiple files, a deterministic
+artifact-manifest fingerprint may be required. That schema is not defined here
+and must not be inferred from this ADR.
+
 ## Decision
 
-1. Treat **engine build identity** as the immutable identity of the executable or
-   build artifact. It includes the executable SHA-256 and available immutable
-   metadata: engine family, upstream or fork version, release tag or source
-   commit, artifact name, target platform, build configuration, and known bundled
-   dependency identity.
-2. Derive `EngineBuildId` from the executable hash and the immutable build
-   metadata needed to distinguish artifacts. The executable path is not an input.
-   Moving or copying an executable does not create a different build.
-3. Do not include runtime probe output in `EngineBuildId`. Different device
-   results do not change the executable's identity.
-4. Store an **installation record** separately. It records the executable path,
+1. For a single-executable artifact, `EngineBuildId` is the executable's
+   SHA-256. The SHA-256 is the canonical file identity. Do not include the
+   executable path, provenance metadata, or runtime probe output in the
+   identifier.
+2. Record engine family, version, release tag, source commit, artifact name,
+   target platform, build configuration, and dependency information as
+   associated metadata. These fields describe and qualify the build but are not
+   inputs to `EngineBuildId`. Discovering, adding, or correcting them must not
+   silently change the identity of an unchanged executable; record the change as
+   a provenance revision tied to the same build.
+3. A build with unknown provenance keeps the same `EngineBuildId`. Unknown fields
+   remain explicitly unknown until evidence supports a provenance revision. Do
+   not invent metadata to complete a record.
+4. If a future supported engine artifact consists of multiple files, introduce a
+   deterministic artifact-manifest fingerprint as the identity for that artifact
+   kind. This ADR does not define, invent, or implement that schema; a later
+   decision is required. Until then, `EngineBuildId` applies only to
+   single-executable artifacts.
+5. Store an **installation record** separately. It records the executable path,
    discovery method (configured path, `PATH`, user-specified path, package, or
    other local source), installation details, and observation time. An
    installation record may change without changing build identity.
-5. Store **capability observations** separately and timestamp them. Each
+6. Store **capability observations** separately and timestamp them. Each
    observation is tied to an `EngineBuildId` and records the runtime context:
    backend, selected device, driver/runtime version, relevant dependency
    evidence, the probe command or endpoint, the result, and the supporting
    evidence.
-6. Model each capability result as `supported`, `unsupported`, or `unknown`. A
+7. Model each capability result as `supported`, `unsupported`, or `unknown`. A
    failed, missing, or inconclusive probe yields `unknown`, never `supported`.
    An observation from one backend, device, or driver does not automatically
    apply to another.
-7. Record the selected backend and device explicitly, including the device
+8. Record the selected backend and device explicitly, including the device
    selector used when multiple Vulkan adapters exist.
-8. Keep CPU, CUDA 12.x, CUDA 13.x, and Vulkan as separate configurations. Do not
+9. Keep CPU, CUDA 12.x, CUDA 13.x, and Vulkan as separate configurations. Do not
    merge their results into a single backend row.
-9. Record whether a CUDA result used native SASS or PTX JIT when that can be
-   determined. Do not assume the prebuilt architecture list from the engine
-   family.
-10. For externally discovered builds, record a release tag or source commit when
+10. Record whether a CUDA result used native SASS or PTX JIT when that can be
+    determined. Do not assume the prebuilt architecture list from the engine
+    family.
+11. For externally discovered builds, record a release tag or source commit when
     available. Do not block discovery on unavailable provenance. Preserve the
     executable hash and known metadata, and label unknown provenance explicitly.
     Never invent a release, commit, version, or build configuration.
-11. Do not auto-update an engine build during a benchmark or silently substitute
+12. Do not auto-update an engine build during a benchmark or silently substitute
     a different build.
-12. Treat a fork as a distinct build profile even when it reuses the same adapter
+13. Treat a fork as a distinct build profile even when it reuses the same adapter
     code.
-13. **Do not choose or pin a specific engine version in Stage 00 or Stage 01.**
+14. **Do not choose or pin a specific engine version in Stage 00 or Stage 01.**
     Select the first baseline during Stage 04 integration, after verifying build
     identity, checksum, runtime dependencies, device visibility, launch behavior,
     and the relevant capability observations. Until then, support claims remain
@@ -89,6 +111,8 @@ layout and on a single observation.
 
 Positive:
 
+- Build identity remains stable when provenance is discovered, enriched, or
+  corrected.
 - Results can be reproduced and compared without depending on a local install
   path.
 - Copying or relocating an executable does not fragment build history.
@@ -101,18 +125,24 @@ Positive:
 
 Negative:
 
-- The data model needs distinct build, installation, and capability records and
-  explicit links between them.
+- The data model needs distinct build identity, associated metadata revisions,
+  installation records, and capability observations, with explicit links between
+  them.
 - Externally discovered builds may have incomplete provenance; unknown fields
-  must remain visible rather than inferred.
+  must remain visible rather than inferred, and later corrections must preserve
+  the existing build identity.
+- A single-file SHA-256 does not identify a multi-file artifact; that case is
+  deferred to a separate decision.
 - Capability observations accumulate over time and need retention and selection
   rules.
 - More metadata must be collected and validated.
 
 Follow-up:
 
-- Define the build, installation, and capability-observation schemas in Stage 01
-  without installing an engine.
+- Define how associated metadata and provenance revisions are recorded in Stage
+  01 without installing an engine.
+- Do not define a multi-file manifest schema until a supported artifact requires
+  it; treat that as a separate decision.
 - Capture probe fixtures from pinned official builds only when an engine is
   installed with separate maintainer approval, expected in Stage 04 or later.
 - Decide which build becomes the first supported baseline at Stage 04
@@ -122,6 +152,9 @@ Follow-up:
 
 ## Alternatives considered
 
+- **Include provenance metadata in `EngineBuildId`:** rejected because unknown or
+  corrected metadata would change the identifier of an unchanged executable and
+  split its measurement history.
 - **Include the executable path in build identity:** simple to implement, but
   makes identity depend on filesystem layout and breaks when a build is moved.
 - **Include device-probe output in build identity:** treats one runtime
@@ -133,9 +166,12 @@ Follow-up:
   backends, and devices.
 - **Infer from `--help` alone:** the flag may be accepted but unsupported by the
   selected backend, or may change semantics.
-- **Pin only the release tag:** helpful, but artifacts with the same tag can
-  differ by backend, build options, or runtime libraries; the hash and runtime
-  context are still needed.
+- **Use the version or release tag as build identity:** rejected; the same tag can
+  map to multiple artifacts and metadata can be incomplete or corrected. The
+  file hash identifies the executable.
+- **Introduce a multi-file manifest fingerprint now:** deferred; no multi-file
+  artifact identity is currently specified, and defining the schema without a
+  concrete artifact would be speculative.
 
 ## References
 
