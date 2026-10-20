@@ -34,8 +34,9 @@ research with sources; initial integration strategy; architecture boundaries;
 MVP and non-goals; benchmark methodology; branch/commit/release workflow;
 documentation contracts; Stage 00 report.
 
-**Gate:** owner reviews the report, accepts or changes the proposed ADRs, and
-authorizes the next stage.
+**Gate:** owner reviews the report and ADR text line by line, accepts the stage,
+and authorizes the next stage. On 2026-10-20 the owner accepted the ADR directions
+in principle; that is not full stage acceptance and does not start Stage 01.
 
 ## Stage 01 — Minimal Rust workspace and diagnostic spine
 
@@ -62,10 +63,13 @@ report without touching engines or models.
 - `ghostram doctor` runs on the primary laptop and reports the observed GPU,
   driver, RAM, swap, and Vulkan devices.
 - Missing engines/models are reported as absent, not as errors.
-- No packages installed, no models downloaded, no system settings changed.
+- No packages installed, no engine installed, no model downloaded, and no system
+  settings changed.
 - Report states what was not verified.
 
-**Non-goals:** GGUF parsing, memory estimates, engine launch, benchmarks, GUI.
+**Non-goals:** engine installation, model download, inference launch, GGUF parsing,
+memory estimates, benchmarks, GUI. Engine discovery may inspect paths and run
+read-only version/device probes, but must not install or launch inference.
 
 ## Stage 02 — GGUF model catalog and identity
 
@@ -121,7 +125,12 @@ measurement.
 - Stop the process group on request, timeout, crash, or resource pressure.
 - Record resolved arguments, build info, devices, and exit status.
 - Add a fake engine for deterministic tests.
-- Run a smoke test on the laptop only with owner authorization and a small model.
+- Select and pin the first engine build only after checking its build identity,
+  checksum, runtime dependencies, device visibility, and launch behavior.
+- Perform the first engine installation and smoke test on the laptop only with
+  separate owner authorization and a small model. Not in Stage 01.
+- Keep the MVP detection-first: do not bundle engine binaries. A later voluntary
+  download into a managed directory needs consent, checksums, and license review.
 - Update status, roadmap, and Stage 04 report.
 
 **Acceptance:** no orphan processes after success, failure, or timeout; engine
@@ -191,9 +200,11 @@ implemented in the UI; accessibility and failure states are documented.
 - Build self-contained artifacts, checksums, licenses, and third-party notices.
 - Finalize install/quick-start/update/uninstall instructions.
 - Validate on a clean environment and the primary laptop.
-- Define engine/runtime acquisition and version pinning.
+- Define engine/runtime acquisition and version pinning for the selected MVP
+  model: detect external installations first; do not bundle binaries by default.
 - Produce a release candidate, changelog, compatibility statement, and known
-  limitations; do not publish without owner approval.
+  limitations; do not publish without separate owner approval for the tag and
+  GitHub Release.
 - Update status, roadmap, and Stage 08 report.
 
 **Acceptance:** a clean-machine install and uninstall works; no development

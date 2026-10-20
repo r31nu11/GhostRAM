@@ -186,6 +186,9 @@ These criteria require hardware tests that Stage 00 did not perform.
   selected accidentally.
 - Engine interfaces and CLI flags change. Capabilities must be probed per build
   and pinned for reproducible tests.
+- No engine version is pinned in Stage 00. The first baseline is selected during
+  Stage 04 integration, not Stage 01.
+- The MVP detects externally installed engines; it does not bundle engine binaries.
 - The secondary GTX 1070 machine is not assumed to be accessible.
 - No models or engine binaries are installed in the development environment at
   the end of Stage 00.
@@ -205,8 +208,10 @@ These criteria require hardware tests that Stage 00 did not perform.
 
 ## 11. Decision rights and governance
 
-- The human owner approves architecture changes, stage acceptance, promotion to
-  `main`, version numbers, tags, and public releases.
+- The owner (`r31nu11`) approves architecture changes, stage acceptance, promotion
+  to `main`, version numbers, tags, and public releases. Promotion, tag, and
+  release are separate approvals; stage acceptance does not authorize a push, tag,
+  or release.
 - AI agents may propose decisions through ADRs and implement accepted stages.
 - A change to an established architectural decision requires a superseding ADR
   with context, reasons, consequences, and migration impact.
@@ -245,16 +250,25 @@ rule. The initial experiment sketches are in
 - **The application control plane is separate from the engine process.** Engine
   crashes must not take down GhostRAM's stored history.
 
-## 14. Open questions for the owner
+## 14. Owner decisions and remaining questions
 
-1. Which engine build should be the first pinned baseline: an official stable
-   release or a specific nightly with available Linux CUDA 12.8/Vulkan assets?
-2. Is installing an inference engine and a small GGUF model authorized for the
-   next stage, and on which storage path?
-3. Should GhostRAM eventually bundle an engine/runtime or only detect externally
-   installed engines?
-4. What usability threshold defines "practically usable" for generation speed
-   and context on the 4 GiB laptop?
-5. Which packaging format is preferred for Linux: tarball, AppImage, Flatpak, or
-   distribution packages?
-6. When should the secondary GTX 1070 machine become part of acceptance testing?
+The owner (`r31nu11`) recorded these decisions on 2026-10-20. They are product
+direction, not measured results.
+
+| Question | Owner decision |
+| --- | --- |
+| Which engine build is pinned first? | None yet. Defer the version/binary choice to the integration stage, where build, checksum, dependencies, and launch can be verified. |
+| When is an engine/model installed? | Not in Stage 01. The first installation and smoke test belong to Stage 04 or later, after the adapter exists, with separate owner permission. |
+| Does GhostRAM bundle an engine? | Not in the MVP. Detect external installations first. A later voluntary download of a verified build into a GhostRAM-managed directory may be considered. |
+| What speed is "usable"? | No universal number without measurements. Collect real laptop results first, then define criteria by hardware and task profile. |
+| When is the GTX 1070 tested? | After the basic diagnostic and execution chain works on the laptop, but before serious performance claims and the first stable release. |
+| Which Linux packaging format? | Still open. Decide with the Stage 08 packaging work. |
+
+Remaining owner decisions:
+
+1. Which packaging format and update channel to use in Stage 08.
+2. Which exact engine build passes the Stage 04 integration checks and becomes the
+   first pinned baseline.
+3. What measured thresholds define a practical result for each hardware/task
+   profile after Stage 05 data exists.
+4. When the GTX 1070 machine is physically available for validation.

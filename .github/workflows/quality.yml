@@ -1,5 +1,8 @@
 name: Quality
 
+# CI validates documentation and commit-message format. It does not authorize a
+# push, promotion to main, a tag, or a GitHub Release; those remain owner decisions.
+
 on:
   push:
     branches: [dev, main]

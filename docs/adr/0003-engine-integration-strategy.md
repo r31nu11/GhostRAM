@@ -1,8 +1,9 @@
 # ADR-0003: Process-based engine integration, official llama.cpp first
 
 **Status:** Proposed
+**Owner direction (2026-10-20):** Accepted in principle; line-by-line review pending.
 **Date:** 2026-10-20
-**Deciders:** human repository owner, project engineers
+**Deciders:** `r31nu11` (repository owner), project engineers
 **Related:** [ENGINE_SUPPORT.md](../ENGINE_SUPPORT.md), [research notes](../research/2026-10-20-engine-landscape.md)
 
 ## Context
@@ -47,6 +48,12 @@ is far outside the MVP and would delay the control-plane work.
 7. Probe capabilities per installed build. Do not infer support from the engine
    family, a flag in `--help`, or a vendor matrix alone.
 8. Do not link engine libraries into the control plane in the first version.
+9. **Do not pin an engine version or install an engine in Stage 00/01.** Choose
+   the first baseline during Stage 04 integration, after verifying the build,
+   checksum, runtime dependencies, device visibility, and launch behavior.
+10. **Do not bundle engine binaries in the MVP.** Detect external installations
+    first. A later optional download of a verified build into a GhostRAM-managed
+    directory requires explicit user consent, checksums, and a license review.
 
 ## Consequences
 
@@ -56,6 +63,9 @@ Positive:
 - The same adapter shape can support official llama.cpp and later a PrismML build.
 - Users can use an existing engine build instead of a GhostRAM-specific build.
 - HTTP and process boundaries are observable, testable, and replaceable.
+- Engine installation and version pinning stay out of Stage 01, so the workspace
+  can be validated without unverified binaries.
+- The MVP avoids bundling and redistribution obligations.
 
 Negative:
 
@@ -69,9 +79,15 @@ Negative:
 Follow-up:
 
 - Define the adapter contract and fake engine in Stage 04.
+- Choose and pin the first engine build during Stage 04 integration, after the
+  build/checksum/runtime/launch checks, and only with separate owner authorization.
+- Perform the first installation and smoke test in Stage 04 or later, never in
+  Stage 01.
 - Validate the official CUDA 12.8 and Vulkan builds only with owner authorization.
 - Revisit FFI only if a documented capability cannot be achieved through the
   process boundary.
+- Revisit bundling or managed downloads only after the external-detection MVP
+  works; require consent, checksums, and license review.
 - Keep engine build identity and capability evidence with every run.
 
 ## Alternatives considered

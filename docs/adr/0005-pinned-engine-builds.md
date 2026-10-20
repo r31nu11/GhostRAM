@@ -1,8 +1,9 @@
 # ADR-0005: Pin and fingerprint engine builds; probe capabilities per build
 
 **Status:** Proposed
+**Owner direction (2026-10-20):** Accepted in principle; line-by-line review pending.
 **Date:** 2026-10-20
-**Deciders:** human repository owner, project engineers
+**Deciders:** `r31nu11` (repository owner), project engineers
 **Related:** [ENGINE_SUPPORT.md](../ENGINE_SUPPORT.md), [ADR-0003](0003-engine-integration-strategy.md)
 
 ## Context
@@ -48,6 +49,10 @@ particular build contains code for compute capability 6.1.
    different build.
 10. Treat a fork as a distinct build profile even when it reuses the same adapter
     code.
+11. **Do not choose or pin a specific engine version in Stage 00/01.** Select the
+    first baseline during Stage 04 integration, after verifying the build,
+    checksum, runtime dependencies, device visibility, and launch behavior. Until
+    then, support claims remain unknown rather than tied to an assumed version.
 
 ## Consequences
 
@@ -68,10 +73,11 @@ Negative:
 
 Follow-up:
 
-- Define the `EngineBuildId` and capability schema in Stage 01.
-- Capture fixtures from pinned official builds when an engine is installed with
-  owner authorization.
-- Decide which build becomes the first supported baseline.
+- Define the `EngineBuildId` and capability schema in Stage 01 without installing
+  an engine.
+- Capture fixtures from pinned official builds only when an engine is installed
+  with separate owner authorization, expected in Stage 04 or later.
+- Decide which build becomes the first supported baseline at Stage 04 integration.
 - Document the update policy: a new build is a new tested configuration, not a
   silent replacement.
 

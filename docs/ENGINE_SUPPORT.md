@@ -36,9 +36,16 @@ A row may mix labels; each claim keeps its own label.
    engine. It is upstream llama.cpp plus additional low-bit formats and drafters;
    its value on 4 GiB Pascal must be measured.
 7. **Pin and fingerprint every engine build.** Do not build tests around
-   "latest".
+   "latest". No specific build is pinned in Stage 00; select the first baseline
+   during Stage 04 integration after verifying the build, checksum, dependencies,
+   device visibility, and launch.
 8. **Probe capabilities per build.** Never infer a build's support solely from
    the engine family or from a flag appearing in `--help`.
+9. **Do not install an engine in Stage 01.** The first installation and smoke test
+   belong to Stage 04 or later with separate owner authorization.
+10. **Detect external installations in the MVP.** Do not bundle engine binaries. A
+    later voluntary download of a verified build into a managed directory requires
+    explicit consent, checksums, and a license review.
 
 ## 3. Compatibility and investigation matrix
 
@@ -313,7 +320,8 @@ tests and a maintenance review.
 8. How should `--fit`-resolved values be captured for reproducible comparisons?
 9. What defines "usable" rather than merely "successfully loaded" for this
    project's users?
-10. Which engine build should be pinned as the first supported baseline?
+10. Which engine build should be pinned as the first supported baseline? Deferred
+    to Stage 04 integration and its build/checksum/runtime/launch checks.
 
 ## 9. Sources
 

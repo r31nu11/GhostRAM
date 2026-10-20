@@ -31,8 +31,15 @@ documentation foundation only; it is not a runnable product.
 ### Changed
 
 - Expanded `README.md` from a placeholder into the public project overview.
-- Established `dev` as the integration branch; `main` remains the accepted
-  checkpoint branch.
+- Established `dev` as the development/integration branch; `main` remains the
+  owner-accepted working/stable checkpoint branch.
+- Recorded the owner's Stage 00 direction: no engine pinned or installed in
+  Stage 01, no engine bundling in the MVP, and no universal speed threshold
+  before measurements.
+- Corrected the two unpublished Stage 00 commits to the owner's Git identity
+  without changing their trees, messages, or order.
+- Clarified that pushes, tags, and GitHub Releases require separate owner
+  approval; stage acceptance is not a release.
 
 ### Fixed
 

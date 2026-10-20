@@ -111,9 +111,13 @@ The local commit hook is opt-in and is not installed globally:
 git config core.hooksPath .githooks
 ```
 
-Development happens on `dev` or on temporary branches based on `dev`. Do not
-commit ordinary work directly to `main`, do not push during Stage 00, and do not
-create releases or tags without the human owner's approval.
+Development and intermediate commits happen on `dev` or on temporary branches
+based on `dev`. `main` receives only owner-accepted, working/stable checkpoints.
+Promotion from `dev` to `main` requires owner acceptance and applicable
+validation. Pushes are not automatic. Tags and GitHub Releases require separate
+explicit owner approval; a documentation-only stage is not a stable application
+release. The repository owner is `r31nu11`, and commits use the owner's local Git
+identity.
 
 ## Safety
 

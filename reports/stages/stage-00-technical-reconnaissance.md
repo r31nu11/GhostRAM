@@ -37,8 +37,9 @@ validation recorded in section 7.
 | 11 | Validate the documentation and workflow checks and record exact results. | Met | Section 7 records the commands and observed outputs. |
 | 12 | Human owner reviews and accepts the stage. | Pending | This report is submitted for review. The stage is not marked accepted. |
 
-The stage is **not accepted** until the human owner reviews this report, the
-proposed ADRs, and the open questions in section 10.
+The stage is **not accepted** until the human owner completes the line-by-line
+review of this report and the ADRs, records any further corrections, and accepts
+the stage. Section 10 records the owner's decisions and the remaining questions.
 
 ## 3. Summary of completed and incomplete work
 
@@ -68,6 +69,9 @@ proposed ADRs, and the open questions in section 10.
 - Stage report template, this report, and a benchmark report contract.
 - Documentation/link/ADR/report checks and a CI workflow for docs and commit
   messages.
+- Repository-maintenance pass: corrected the two unpublished Stage 00 commits to
+  the owner's identity, verified their trees were unchanged, and aligned branch,
+  push, tag, and release policy with the owner's decisions.
 
 ### Incomplete or deferred
 
@@ -75,7 +79,8 @@ proposed ADRs, and the open questions in section 10.
 | --- | --- | --- |
 | Rust workspace and CLI | Stage 00 is documentation-only; crate split needs ADR review | Stage 01 |
 | Hardware probe implementation | Requires workspace and tests | Stage 01 |
-| Engine installation and capability probe | Requires owner authorization and a pinned build | Stage 01/04 |
+| Engine baseline selection and pinning | Requires Stage 04 build/checksum/dependency/device/launch checks | Stage 04 |
+| Engine installation and capability probe | Requires separate owner authorization; not part of Stage 01 | Stage 04+ |
 | GGUF parser | Requires dependency audit and malformed-input tests | Stage 02 |
 | Memory planner | Requires metadata and later calibration | Stage 03 |
 | Engine supervisor | Requires adapter contract and fake-engine tests | Stage 04 |
@@ -87,16 +92,19 @@ proposed ADRs, and the open questions in section 10.
 
 ## 4. Architectural decisions and rationale
 
-All decisions are **proposed** and await owner review. They are binding for Stage
-00 work but are not accepted architecture.
+All decisions remain **Proposed** for formal purposes. On 2026-10-20 the owner
+accepted their direction in principle and requested that decisions remain
+revisable when measurements arrive; line-by-line review and formal acceptance are
+still pending. They are binding for current work but are not fully accepted
+architecture.
 
 | ADR | Decision | Rationale |
 | --- | --- | --- |
-| [0001](../../docs/adr/0001-branching-and-commit-policy.md) | `main`/`dev` branches, task branches, Conventional Commits with `Changes`/`Reason`/`Validation`, CI checks, no unauthorized push/tag/release. | Reviewability, continuity across agents, and a durable record of what was validated. |
+| [0001](../../docs/adr/0001-branching-and-commit-policy.md) | `dev` development/integration; `main` owner-accepted stable checkpoints; task branches; Conventional Commits with `Changes`/`Reason`/`Validation`; owner identity; no automatic push; separate tag/release approval. | Reviewability, continuity across agents, clear authority, and a durable record of what was validated. |
 | [0002](../../docs/adr/0002-modular-monolith-and-crate-split.md) | Start with `core`, `probe`, and `cli`; split other crates when a real boundary justifies it. | Avoids placeholder crates and premature APIs while keeping testable boundaries. |
-| [0003](../../docs/adr/0003-engine-integration-strategy.md) | External child process + HTTP/CLI; official llama.cpp first; CPU baseline; CUDA 12.x or Vulkan on Pascal; PrismML later. | Crash isolation, build variance, and evidence-based scope control. |
+| [0003](../../docs/adr/0003-engine-integration-strategy.md) | External child process + HTTP/CLI; official llama.cpp first; CPU baseline; CUDA 12.x or Vulkan on Pascal; PrismML later; no engine pinned or installed in Stage 01; detect external engines in the MVP. | Crash isolation, build variance, evidence-based scope control, and avoiding unverified binaries. |
 | [0004](../../docs/adr/0004-measurement-provenance.md) | Separate `Estimate` and `Measurement`; run manifests; immutable records; labeled claims. | Prevents estimated or cherry-picked numbers from becoming product claims. |
-| [0005](../../docs/adr/0005-pinned-engine-builds.md) | Pin/fingerprint builds and probe capabilities per build. | "llama.cpp" is not one behavior; support must refer to an actual executable and device. |
+| [0005](../../docs/adr/0005-pinned-engine-builds.md) | Pin/fingerprint builds and probe capabilities per build; no baseline version is pinned until Stage 04 integration checks. | "llama.cpp" is not one behavior; support must refer to an actual executable and device, verified before pinning. |
 
 The architecture proposal also keeps the control plane and inference plane in
 separate failure domains, and treats `--fit`-resolved values as part of the
@@ -175,7 +183,7 @@ root. A result is not claimed unless it was observed.
 
 ```text
 $ python3 scripts/check_docs.py
-ok: 27 Markdown files, 103 relative links, 20 required files
+ok: 27 Markdown files, 104 relative links, 20 required files
 ```
 
 ### 7.2 Commit-message checker
@@ -218,21 +226,23 @@ yaml parse: ok; jobs: documentation, commit-messages
 
 ### 7.5 Whitespace and status
 
-After the content commit `df0ad8a`:
+After the identity-corrected status/report commit `b964fad`:
 
 ```text
 $ git diff --check
 git diff --check: clean
 
 $ git status --short --branch
-## dev...origin/dev [ahead 1]
+## dev...origin/dev [ahead 2]
 ```
 
 ### 7.6 Commit range
 
 ```text
 $ bash scripts/check-commit-range.sh bdfced9d7db49a1e2bdad5dd1602822734da33b1 HEAD
-check: df0ad8ac9a62 docs(stage-00): establish project foundation and engine research
+check: f0f9a8135715 docs(stage-00): establish project foundation and engine research
+ok: commit message accepted
+check: b964fad3ed88 docs(stage-00): record validation results and content commit
 ok: commit message accepted
 ok: all checked commit messages passed
 ```
@@ -249,6 +259,29 @@ cargo test --workspace
 
 These commands are required from Stage 01 onward. Running them now would only
 report that no manifest exists.
+
+### 7.8 Commit identity correction
+
+The two local Stage 00 commits were rewritten to the owner's configured identity
+after confirming that `origin/dev` and `origin/main` still pointed at the starting
+commit `bdfced9`. The starting commit was not altered.
+
+```text
+$ git log --format='%h %an <%ae> | %cn <%ce> | %s' bdfced9..HEAD
+b964fad r31nu11 <r31nu11@mail.ru> | r31nu11 <r31nu11@mail.ru> | docs(stage-00): record validation results and content commit
+f0f9a81 r31nu11 <r31nu11@mail.ru> | r31nu11 <r31nu11@mail.ru> | docs(stage-00): establish project foundation and engine research
+
+$ git diff --stat df0ad8a f0f9a81
+(no output; tree identical)
+
+$ git diff --stat b75c3b7 b964fad
+(no output; tree identical)
+```
+
+Identity rewriting changes commit hashes. The old hashes are recorded here and in
+section 11 for traceability; they are no longer reachable from `dev` except
+through the local reflog. The author dates and commit messages were preserved;
+committer dates changed as expected. No commit was pushed.
 
 ## 8. Hardware tests and measurements
 
@@ -291,8 +324,10 @@ The following remain unmeasured:
 
 - There is no runnable GhostRAM artifact; the repository is documentation and
   repository tooling only.
-- The architecture and ADRs are proposals, not accepted decisions.
+- The ADRs are proposed and accepted in principle, not fully accepted; line-by-line
+  review is pending.
 - No engine build has been verified on this laptop by the project.
+- No engine version is pinned; baseline selection is deferred to Stage 04.
 - CUDA 13.x is unsuitable for Pascal; a CUDA 12.8 build or Vulkan is required.
 - `libcudart` and cuBLAS are not installed locally; the official CUDA archive may
   require a separate runtime asset.
@@ -301,63 +336,70 @@ The following remain unmeasured:
 - Two Vulkan devices are visible; selection must be explicit.
 - The secondary GTX 1070 machine is not available.
 - The GitHub repository is public, but nothing was pushed, tagged, or released in
-  Stage 00.
+  Stage 00. The identity correction did not push anything.
 - The Stage 00 report's validation was performed on the local machine only; CI
   has not run.
 
-### Open questions for the owner
+### Owner decisions recorded 2026-10-20
 
-1. Which engine build should be the first pinned baseline: official stable
-   `v0.7.0` or a specific nightly with Linux CUDA 12.8/Vulkan assets?
-2. Is installing an inference engine and a small GGUF model authorized for Stage
-   01 or Stage 04, and on which storage path?
-3. Should GhostRAM eventually bundle an engine/runtime, or only detect externally
-   installed engines?
-4. What usability threshold defines "practically usable" for generation speed and
-   context on this laptop?
-5. Which Linux packaging format is preferred: tarball, distribution package,
-   AppImage, or Flatpak?
-6. When should the secondary GTX 1070 machine become part of acceptance testing?
-7. Are the five proposed ADRs accepted as written, or should any be revised before
-   Stage 01?
+| Question | Decision |
+| --- | --- |
+| ADR-0001 through ADR-0005 | Accept the directions in principle, fix remarks, and keep decisions revisable when measurements arrive. Full line-by-line review is pending. |
+| First engine build | Pin none yet. Choose the version/binary in the integration stage after verifying build, checksum, dependencies, and launch. |
+| Engine/model installation | Not in Stage 01. First installation and smoke test in Stage 04 or later, after the adapter exists, with separate owner permission. |
+| Engine bundling | Do not bundle binaries in the MVP. Detect external installations first; later consider voluntary download of a verified build into a managed directory. |
+| Usability threshold | No universal number without measurements. Collect laptop results first, then define criteria by hardware and task profile. |
+| GTX 1070 testing | After the basic diagnostic/execution chain works on the laptop, before serious performance claims and the first stable release. |
+| Linux packaging | Still open; decide during Stage 08. |
+
+### Remaining open questions
+
+1. Which exact engine build passes the Stage 04 integration checks and becomes the
+   first pinned baseline?
+2. What measured thresholds define a practical result for each hardware/task
+   profile after Stage 05 data exists?
+3. Which Linux packaging format and update channel should Stage 08 use?
+4. When will the GTX 1070 machine be physically available for validation?
 
 ## 11. Current branch and commit hash
 
 - **Branch:** `dev`.
 - **Starting commit:** `bdfced9d7db49a1e2bdad5dd1602822734da33b1`
   (`Initial commit`).
-- **Stage 00 content commit:** `df0ad8ac9a62e73a9c1ecf503b431b7bd3ff5d19`
+- **Stage 00 content commit (identity-corrected):**
+  `f0f9a8135715037b4dc81d4df0eb986ce90b6d69`
   (`docs(stage-00): establish project foundation and engine research`).
-- **Status/report commit:** the follow-up commit that records this hash; see
-  `git log --oneline --decorate -3`.
-- **Push:** not performed. The branch still tracks `origin/dev` at the starting
-  commit unless the owner pushes it.
+- **Stage 00 status/report commit (identity-corrected):**
+  `b964fad3ed8810833a8a415f06b21d0748fd2686`
+  (`docs(stage-00): record validation results and content commit`).
+- **Repository-maintenance commit:** the follow-up commit containing this
+  identity and branch-policy maintenance snapshot; see
+  `git log --oneline --decorate -4`.
+- **Push:** not performed. `origin/dev` and `origin/main` remained at
+  `bdfced9d7db49a1e2bdad5dd1602822734da33b1` during the maintenance task.
 - **Tag/release:** none.
 
-The commit hash is recorded after the content commit exists; a commit cannot
-contain its own hash. The final hand-off states the resulting HEAD.
+The identity correction rewrote the two unpublished Stage 00 commits, so their
+hashes changed from the original `df0ad8a`/`b75c3b7` pair to
+`f0f9a81`/`b964fad`. The starting owner commit `bdfced9` was not altered. A commit
+cannot contain its own hash; the final hand-off states the resulting HEAD.
 
 ## 12. Git working-tree status
 
 At the start of Stage 00, the tree was clean on `dev` at `bdfced9` with no
 untracked files.
 
-After the content commit `df0ad8a`, the tree was clean and `dev` was one commit
-ahead of `origin/dev`:
-
-```text
-## dev...origin/dev [ahead 1]
-```
-
-The status/report commit contains only this report and `docs/PROJECT_STATUS.md`.
-After that commit, the tree was clean and `dev` was two commits ahead of
-`origin/dev`:
+After the identity-corrected status/report commit `b964fad`, the tree was clean
+and `dev` was two commits ahead of `origin/dev`:
 
 ```text
 ## dev...origin/dev [ahead 2]
 ```
 
-No unrelated user changes were present. No files were removed.
+The repository-maintenance commit adds only the identity, branch-policy, owner
+decision, and validation updates described in this report. The final hand-off
+records the clean status after that commit. No unrelated user changes were
+present. No files were removed, and nothing was pushed.
 
 ## 13. Documentation updated
 
@@ -386,13 +428,22 @@ Updated or created:
 - `reports/stages/stage-00-technical-reconnaissance.md`
 - `reports/benchmarks/README.md`
 
-`PROJECT_STATUS.md` and `ROADMAP.md` reflect Stage 00 as complete pending review,
-with Stage 01 as the next recommended stage. The changelog records the
-documentation foundation under `Unreleased`, not a release.
+The maintenance pass also updated `AGENTS.md`, `README.md`, `CHANGELOG.md`,
+`docs/CONTRIBUTING.md`, `docs/RELEASING.md`, `docs/PROJECT_CHARTER.md`,
+`docs/ENGINE_SUPPORT.md`, `docs/adr/README.md`, and ADR-0001 through ADR-0005 to
+align ownership, branch, push, tag, and release policy and record the owner's
+decisions. ADR-0002 and ADR-0004 received the owner-direction note; ADR-0001,
+ADR-0003, and ADR-0005 also received policy or engine-baseline corrections.
+
+`PROJECT_STATUS.md` and `ROADMAP.md` reflect Stage 00 as complete pending full
+review, with Stage 01 as the next recommended but unauthorized stage. The
+changelog records the documentation foundation and maintenance pass under
+`Unreleased`, not a release.
 
 ## 14. Recommended next stage
 
-**Stage 01 — Minimal Rust workspace and diagnostic spine.**
+**Stage 01 — Minimal Rust workspace and diagnostic spine.** Not started and not
+authorized.
 
 Recommended scope:
 
@@ -405,12 +456,15 @@ Recommended scope:
 - add Rust jobs to CI;
 - update the stage report, status, and roadmap.
 
-Stage 01 must not install an engine, download a model, launch inference, or
-implement the optimizer. Engine installation and the first real hardware smoke test
-need explicit owner authorization and belong in Stage 04 at the earliest.
+Stage 01 must not install an engine or model, download anything, launch inference,
+or implement the optimizer. Engine installation and the first real hardware smoke
+test need separate owner authorization and belong in Stage 04 at the earliest.
+The first baseline build is selected there after build, checksum, dependency,
+device, and launch checks.
 
-The owner must first review and accept this report and the proposed ADRs, and
-answer the build/model authorization questions in section 10.
+The owner must first complete the line-by-line ADR review, accept this report, and
+authorize Stage 01. The owner decisions in section 10 remove the earlier
+build/model approval ambiguity but do not start Stage 01.
 
 ## Hand-off checklist
 
@@ -420,7 +474,12 @@ answer the build/model authorization questions in section 10.
 - [x] Workflow and repository checks created.
 - [x] ADRs written and marked proposed.
 - [x] No engine, model, package, driver, or system setting changed.
-- [x] No push, tag, or release performed.
+- [x] No push, tag, release, merge, branch creation, or branch deletion performed.
 - [x] No benchmark result fabricated or implied.
+- [x] Unpublished Stage 00 commits corrected to the owner's identity with trees,
+  messages, and order preserved.
+- [x] Branch, push, tag, and release policy clarified.
+- [x] Owner decisions recorded.
 - [x] Validation results filled in after the final command run.
-- [ ] Human owner review and acceptance.
+- [ ] Human owner line-by-line review and Stage 00 acceptance.
+- [ ] Separate authorization to start Stage 01.

@@ -4,6 +4,9 @@
 application code yet; the workflow below applies to documentation, research, and
 future implementation stages.
 
+The repository owner is `r31nu11` (GitHub account `r31nu11`). Branches, commits,
+and releases are governed by the owner's decisions below.
+
 ## 1. Before you start
 
 1. Read [AGENTS.md](../AGENTS.md), [PROJECT_STATUS.md](PROJECT_STATUS.md), and the
@@ -18,26 +21,60 @@ future implementation stages.
 ## 2. Branch model
 
 ```text
-main        accepted, reviewed checkpoints only
+main        owner-accepted, working/stable checkpoints only
   │
   └── dev   integration branch for the current stage
         │
         └── task branch   short-lived work, merged back into dev
 ```
 
-- `main` is promoted from `dev` only by the human owner.
-- Ordinary development happens on `dev` or a task branch based on `dev`.
+- `dev` is the development and integration branch. Ordinary and intermediate
+  commits belong here or on a short-lived task branch based on it.
+- `main` receives only owner-accepted, working/stable checkpoints.
+- Promotion from `dev` to `main` requires owner acceptance and the applicable
+  validation. It is not automatic and does not happen merely because a stage
+  report exists.
+- Pushes are not automatic. Do not push, force-push, rewrite published history,
+  create a tag, or publish a GitHub Release without explicit owner authorization.
+- Tags and GitHub Releases require **separate** explicit owner approval. A stage
+  acceptance or a merge to `main` does not authorize a tag or release.
+- A documentation-only stage is not a stable application release, even when its
+  report is accepted.
 - Task branch names should describe the work, for example
   `stage-01-workspace`, `feat/probe-cpu`, or `fix/gguf-bounds`.
-- Do not push, force-push, rewrite published history, tag, or publish a release
-  without explicit owner authorization.
 - Do not delete or clean untracked files that you did not create.
 
 Keeping changes on a task branch is recommended when the work is large or
 experimental. Small documentation corrections may be committed directly to
 `dev`, provided the stage report and status are updated in the same change.
 
-## 3. Commit convention
+## 3. Commit identity
+
+All commits must use the owner's repository-local Git identity:
+
+```text
+name:  r31nu11
+email: the owner's confirmed address in the local Git configuration
+```
+
+Rules:
+
+- Use `git config --local`; do not modify global Git configuration.
+- Do not commit as `GhostRAM Agent`, `agent@localhost`, or another invented
+  identity.
+- If the local name or email is missing, agent-like, or unconfirmed, stop before
+  committing and ask the owner to configure it.
+- Do not invent or guess an email address.
+- Do not alter the owner-created starting commit.
+- Rewriting unpublished commits changes their hashes. Do it only with owner
+  authorization, preserve contents/messages/order, and verify the result.
+- Never rewrite a commit that has been pushed or shared without owner direction.
+
+The commit-message and commit-range scripts validate message format, not
+authorship. Authorship is verified with `git log --format=fuller` and
+`git config --local --get user.name` / `user.email`.
+
+## 4. Commit convention
 
 GhostRAM uses Conventional Commits:
 
@@ -123,7 +160,7 @@ The helper can be tested directly:
 bash scripts/check-commit-message.sh path/to/message-file
 ```
 
-## 4. Review checklist
+## 5. Review checklist
 
 Before requesting review, verify:
 
@@ -133,6 +170,7 @@ Before requesting review, verify:
 - [ ] `cargo fmt`, `cargo clippy`, and `cargo test` pass once a workspace exists.
 - [ ] `python3 scripts/check_docs.py` passes.
 - [ ] Commit messages in the range pass `scripts/check-commit-range.sh`.
+- [ ] Author and committer are the owner's confirmed identity, not an agent.
 - [ ] Documentation links resolve and claims are supported by evidence.
 - [ ] No secrets, model weights, engine binaries, or personal data are committed.
 - [ ] `PROJECT_STATUS.md` and `ROADMAP.md` reflect reality.
@@ -142,7 +180,7 @@ Before requesting review, verify:
 The reviewer checks the evidence, not only the diff. A green check does not
 compensate for a missing hardware test or an unsupported performance claim.
 
-## 5. Documentation changes
+## 6. Documentation changes
 
 - User-facing docs must label planned behavior as planned. Do not write commands
   for a binary that does not exist.
@@ -155,7 +193,7 @@ compensate for a missing hardware test or an unsupported performance claim.
   sections.
 - Do not fabricate measurements. Write "not measured" when nothing was measured.
 
-## 6. Code style (future)
+## 7. Code style (future)
 
 - Rust 2024 edition, stable toolchain unless an ADR pins otherwise.
 - `cargo fmt` is authoritative for formatting.
@@ -165,7 +203,7 @@ compensate for a missing hardware test or an unsupported performance claim.
 - No shell string construction for engine arguments; pass argument arrays.
 - Keep domain logic out of CLI and UI adapters.
 
-## 7. Merge and stage completion
+## 8. Merge and stage completion
 
 1. Commit coherent changes on the task branch.
 2. Run the applicable checks and record exact results.
@@ -174,8 +212,12 @@ compensate for a missing hardware test or an unsupported performance claim.
    yourself.
 5. A stage is complete only after the owner reviews the report and accepts the
    result.
+6. Promotion of `dev` to `main` requires owner acceptance and applicable
+   validation. It does not authorize a push, tag, or GitHub Release.
+7. Tags and GitHub Releases require separate explicit owner approval, even after
+   promotion.
 
-## 8. Questions and blockers
+## 9. Questions and blockers
 
 Report uncertainties instead of inventing context. For a conflict between a
 stage instruction and an accepted decision, link the ADR and propose a

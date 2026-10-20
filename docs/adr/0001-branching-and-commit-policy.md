@@ -1,8 +1,9 @@
 # ADR-0001: Branching, commits, and stage workflow
 
 **Status:** Proposed
+**Owner direction (2026-10-20):** Accepted in principle; line-by-line review pending.
 **Date:** 2026-10-20
-**Deciders:** human repository owner, project engineers
+**Deciders:** `r31nu11` (repository owner), project engineers
 **Related:** [CONTRIBUTING.md](../CONTRIBUTING.md), [ROADMAP.md](../ROADMAP.md), [Stage 00 report](../../reports/stages/stage-00-technical-reconnaissance.md)
 
 ## Context
@@ -23,22 +24,31 @@ The project needs:
 
 ## Decision
 
-1. `main` is the accepted checkpoint branch. It changes only by human-approved
-   promotion from `dev`.
-2. `dev` is the integration branch for ordinary development.
-3. Stage work may use short-lived task branches based on `dev`, named for the work
+1. `dev` is the development and integration branch for ordinary and intermediate
+   commits.
+2. `main` receives only owner-accepted, working/stable checkpoints. It changes only
+   by owner-approved promotion from `dev`.
+3. Promotion from `dev` to `main` requires owner acceptance and the applicable
+   validation. It is not automatic.
+4. Stage work may use short-lived task branches based on `dev`, named for the work
    (for example `stage-01-workspace` or `feat/probe-cpu`).
-4. Commits use Conventional Commits with the body sections `Changes:`, `Reason:`,
+5. Commits use Conventional Commits with the body sections `Changes:`, `Reason:`,
    and `Validation:`. A breaking change requires `!` and a
    `BREAKING CHANGE:` footer.
-5. Commit validation is available through an opt-in local `commit-msg` hook and a
+6. Commit validation is available through an opt-in local `commit-msg` hook and a
    commit-range script used by CI.
-6. Documentation checks and commit-range checks run in CI. Rust checks are added
+7. Documentation checks and commit-range checks run in CI. Rust checks are added
    when a workspace exists.
-7. Pushing, tagging, publishing, changing remotes, force-pushing, and rewriting
-   published history require explicit human authorization.
-8. Every stage ends with a report, updated status/roadmap, recorded validation, and
-   human review. Code volume is not an acceptance criterion.
+8. Pushes are never automatic. Pushing, changing remotes, force-pushing, and
+   rewriting published history require explicit owner authorization.
+9. Tags and GitHub Releases require separate explicit owner approval. Stage
+   acceptance, a merge to `main`, or a release candidate does not authorize them.
+10. A documentation-only stage is not a stable application release.
+11. Every stage ends with a report, updated status/roadmap, recorded validation, and
+    owner review. Code volume is not an acceptance criterion.
+12. All commits use the owner's repository-local Git identity `r31nu11` with the
+    owner's confirmed email. Agent identities such as `GhostRAM Agent` are not
+    permitted.
 
 ## Consequences
 
@@ -48,12 +58,14 @@ Positive:
 - The owner can review `dev` before promoting to `main`.
 - Agents have a repository-based source of truth.
 - Destructive or externally visible actions are gated.
+- Authorship and release authority are unambiguous.
 
 Negative:
 
 - Every commit needs a small amount of structure and honest validation text.
 - The workflow adds branch overhead for small documentation fixes.
-- A local hook is opt-in; CI remains the backstop.
+- A local hook is opt-in; CI remains the message-format backstop, not an
+  authorship or branch-permission enforcement mechanism.
 
 Follow-up:
 

@@ -4,6 +4,11 @@ This file is the entry point for every AI agent working on GhostRAM. The
 repository is the authoritative source of project state. Chat history and model
 memory are not authoritative.
 
+The repository owner is `r31nu11` (GitHub account `r31nu11`). All commits must
+use the owner's repository-local Git identity. Do not commit as `GhostRAM Agent`,
+`agent@localhost`, or another invented identity. If the local name or email is
+missing, agent-like, or unconfirmed, stop before committing and ask the owner.
+
 ## Mandatory start-of-stage checklist
 
 Before changing anything:
@@ -25,9 +30,10 @@ and propose a superseding ADR with reasons.
 ## Current state
 
 - Stage 00 (technical reconnaissance and project charter) is complete pending
-  human review.
+  full human review and acceptance. The owner accepted the ADR directions in
+  principle on 2026-10-20; line-by-line review remains pending.
 - There is no Rust workspace, no GhostRAM binary, no installed inference engine,
-  and no model catalog in this repository.
+  and no model catalog in this repository. Stage 01 has not started.
 - No benchmark results exist. Never imply that a planned benchmark was executed.
 - The primary laptop has a 4 GiB Pascal GPU and 7.4 GiB RAM. The secondary
   machine has not been accessed.
@@ -40,8 +46,13 @@ for the Stage 00 evidence.
 
 - Work on `dev` or a temporary branch based on `dev`. Do not commit ordinary
   development to `main`.
-- Do not push, create a GitHub repository, change remotes, tag, or publish a
-  release unless the human owner explicitly authorizes it.
+- `main` receives only owner-accepted, working/stable checkpoints. Promotion from
+  `dev` to `main` requires owner acceptance and applicable validation.
+- Do not push, create a GitHub repository, or change remotes. Pushes are never
+  automatic.
+- Tags and GitHub Releases require **separate explicit owner approval**. Stage
+  acceptance or a merge to `main` does not authorize either. A documentation-only
+  stage is not a stable application release.
 - Do not force-push, rewrite published history, reset destructively, or clean
   untracked files.
 - Do not delete or overwrite user files, models, benchmarks, or unrelated work.
@@ -86,9 +97,12 @@ for the Stage 00 evidence.
    [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md).
 4. Run the applicable checks and record exact commands and outcomes.
 5. Update `docs/PROJECT_STATUS.md`, `docs/ROADMAP.md`, and the stage report.
-6. Commit on the task branch, then merge or ask the human owner to merge into
-   `dev`. Promotion of `dev` to `main` is a human decision.
+6. Commit on the task branch using the owner's local identity, then merge or ask
+   the owner to merge into `dev`. Promotion of `dev` to `main` requires owner
+   acceptance and applicable validation.
 7. Report blockers, incomplete criteria, and decisions needed from the owner.
+8. Do not tag or create a GitHub Release unless the owner has approved it
+   separately from stage acceptance and promotion.
 
 ## Validation
 
@@ -97,7 +111,12 @@ Current Stage 00 checks:
 ```sh
 python3 scripts/check_docs.py
 bash scripts/check-commit-range.sh <base-sha> HEAD
+git config --local --get user.name
+git config --local --get user.email
 ```
+
+The two `git config` commands must report the owner's confirmed identity, never
+an agent identity.
 
 Future stages must add, at minimum:
 
@@ -130,6 +149,9 @@ A stage is complete only when its acceptance criteria are explicitly checked,
 the validation commands and observed results are recorded, the stage report is
 written, `PROJECT_STATUS.md` and `ROADMAP.md` reflect reality, and the human
 owner has reviewed the result. Code volume is not an acceptance criterion.
+
+Stage acceptance does not promote `dev` to `main`, create a tag, publish a
+release, or authorize a push. Those actions remain separate owner decisions.
 
 When in doubt, preserve user work, avoid destructive actions, and ask the human
 owner.

@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Validate all non-merge commits in BASE..HEAD (exclusive of BASE).
 # The root commit is skipped because it may predate the convention.
+# This checks message format only. It does not enforce branch promotion, commit
+# authorship, push, tag, or release approval; those remain human owner decisions.
 # Usage: scripts/check-commit-range.sh <base-sha> <head-sha>
 set -euo pipefail
 
