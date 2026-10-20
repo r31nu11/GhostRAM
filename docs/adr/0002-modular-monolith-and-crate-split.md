@@ -1,6 +1,6 @@
 # ADR-0002: Modular monolith and delayed crate split
 
-**Status:** Proposed (pending adoption)
+**Status:** Accepted
 **Date:** 2026-10-20
 **Deciders:** `r31nu11` (project maintainer)
 **Related:** [ARCHITECTURE.md](../ARCHITECTURE.md), [ROADMAP.md](../ROADMAP.md)

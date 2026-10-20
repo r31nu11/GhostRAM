@@ -4,13 +4,30 @@ All notable changes to GhostRAM will be documented in this file. The project
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-No GhostRAM version has been released or tagged. `Unreleased` describes the
-documentation foundation only; it is not a runnable product.
+No GhostRAM version has been released or tagged. `Unreleased` now includes the
+Stage 01 source implementation and its read-only diagnostic CLI. It remains a
+development snapshot, not a release artifact or supported installation.
 
 ## [Unreleased]
 
 ### Added
 
+- Rust workspace with exactly three crates: `ghostram-core`, `ghostram-probe`, and
+  `ghostram-cli`, plus a committed `Cargo.lock`.
+- Typed byte quantities, diagnostic states, category reports, system models, typed
+  errors, and a `ghostram.doctor/1` JSON envelope in `ghostram-core`.
+- Read-only Linux probes for OS/kernel, CPU, memory, swap, zram, storage, NVIDIA
+  GPU/driver, Vulkan devices, development/GPU tool availability, and external
+  llama.cpp executable discovery.
+- Bounded subprocess execution with explicit paths and argument arrays, output
+  limits, timeouts, and child cleanup. No shell interpolation is used.
+- `ghostram doctor` human-readable output and `ghostram doctor --json` with clean
+  stdout, stable schema identifiers, and meaningful exit codes.
+- Deterministic parser fixtures and tests for OS release, CPU info, meminfo, swap,
+  df, nvidia-smi, Vulkan summary, llama.cpp version/device output, malformed input,
+  partial reports, and CLI behavior.
+- Rust formatting, Clippy, test, and locked-build jobs in CI.
+- [Diagnostic report schema](docs/DOCTOR_SCHEMA.md) and the Stage 01 report.
 - Project charter, MVP definition, non-goals, success criteria, and governance.
 - Architecture proposal with crate boundaries, domain-model rules, and safety
   principles.
@@ -45,10 +62,16 @@ documentation foundation only; it is not a runnable product.
 - Refined ADR-0005 to separate immutable engine build identity from installation
   records and timestamped capability observations, and aligned `ARCHITECTURE.md`
   with that model.
+- Accepted Stage 00 and adopted ADR-0001 through ADR-0005 on 2026-10-20.
+- Updated architecture, testing, installation, quick-start, troubleshooting,
+  engine-support, status, roadmap, and contributor documentation for the Stage 01
+  diagnostic implementation.
 
 ### Fixed
 
-- Nothing yet; no application code exists.
+- Stage 01 parser handling avoids zero, guessed, or "supported" values for missing
+  or inconclusive measurements. Missing optional tools and hardware remain
+  explicit `partial` or `unavailable` results.
 
 ### Removed
 

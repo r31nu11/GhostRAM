@@ -1,6 +1,6 @@
 # ADR-0003: Process-based engine integration, official llama.cpp first
 
-**Status:** Proposed (pending adoption)
+**Status:** Accepted
 **Date:** 2026-10-20
 **Deciders:** `r31nu11` (project maintainer)
 **Related:** [ENGINE_SUPPORT.md](../ENGINE_SUPPORT.md), [research notes](../research/2026-10-20-engine-landscape.md)

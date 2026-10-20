@@ -3,7 +3,7 @@
 **Date:** 2026-10-20
 **Maintainer:** `r31nu11` (project maintainer)
 **Branch:** `dev`
-**Status:** Complete, pending formal acceptance
+**Status:** Accepted on 2026-10-20
 
 ## 1. Stage identifier and title
 
@@ -30,15 +30,16 @@ in section 7.
 | 5 | Define a reproducible benchmark methodology without fabricating results. | Met | [BENCHMARKING.md](../../docs/BENCHMARKING.md); this report states no benchmark was run. |
 | 6 | Define branch, commit, review, testing, and release policies. | Met | [CONTRIBUTING.md](../../docs/CONTRIBUTING.md), [TESTING.md](../../docs/TESTING.md), [RELEASING.md](../../docs/RELEASING.md), ADR-0001, commit scripts, CI workflow. |
 | 7 | Provide user-facing installation/quick-start/troubleshooting/uninstall contracts that do not pretend the product exists. | Met | User docs explicitly label all behavior as planned and provide no false install commands. |
-| 8 | Create ADRs for the consequential Stage 00 decisions. | Met | ADR-0001 through ADR-0005, all Proposed and pending adoption. |
+| 8 | Create ADRs for the consequential Stage 00 decisions. | Met | ADR-0001 through ADR-0005; accepted by the maintainer on 2026-10-20. |
 | 9 | Provide a mandatory 14-section stage report and update status/roadmap. | Met | This report; [PROJECT_STATUS.md](../../docs/PROJECT_STATUS.md); [ROADMAP.md](../../docs/ROADMAP.md). |
 | 10 | Do not install an engine, download a model, run an expensive benchmark, change system settings, push, tag, or release. | Met | No engine/model exists; no installation or benchmark command was run; no push/tag/release was performed. |
 | 11 | Validate the documentation and workflow checks and record exact results. | Met | Section 7 records the commands and observed outputs. |
-| 12 | The maintainer formally reviews and accepts the stage. | Pending | This report records the completed work. The stage is not marked accepted. |
+| 12 | The maintainer formally reviews and accepts the stage. | Met | Accepted by the maintainer on 2026-10-20; ADR-0001 through ADR-0005 were adopted at the same time and Stage 01 was authorized. |
 
-The stage is **not accepted**. Formal acceptance requires the maintainer to review
-this report and the ADRs, record any further corrections, and accept the stage.
-Section 10 records the project decisions and remaining questions.
+The stage was **accepted on 2026-10-20**. The maintainer accepted this report,
+adopted ADR-0001 through ADR-0005, and authorized Stage 01. Section 10 records the
+project decisions and remaining questions. Stage 01 execution is recorded
+separately in [stage-01-minimal-rust-workspace.md](stage-01-minimal-rust-workspace.md).
 
 ## 3. Summary of completed and incomplete work
 
@@ -79,8 +80,8 @@ Section 10 records the project decisions and remaining questions.
 
 | Item | Reason | Target |
 | --- | --- | --- |
-| Rust workspace and CLI | Stage 00 is documentation-only; crate split must follow ADR adoption | Stage 01 |
-| Hardware probe implementation | Requires workspace and tests | Stage 01 |
+| Rust workspace and CLI | Completed in Stage 01; source-buildable, not released | Stage 01 |
+| Hardware probe implementation | Completed in Stage 01 for read-only diagnostics | Stage 01 |
 | Engine baseline selection and pinning | Requires Stage 04 build/checksum/dependency/device/launch checks | Stage 04 |
 | Engine installation and capability probe | Requires separate maintainer approval; not part of Stage 01 | Stage 04+ |
 | GGUF parser | Requires dependency audit and malformed-input tests | Stage 02 |
@@ -94,10 +95,10 @@ Section 10 records the project decisions and remaining questions.
 
 ## 4. Architectural decisions and rationale
 
-All five ADRs remain **Proposed**; formal adoption is pending. Their technical
-direction was reviewed in principle on 2026-10-20 and remains subject to revision
-when measurements arrive. The proposed decisions guide current work but do not
-constitute accepted architecture.
+All five ADRs were **accepted** on 2026-10-20. The technical direction remains
+subject to revision when measurements arrive, but a changed decision requires a
+superseding ADR rather than a silent rewrite. The accepted decisions guide current
+work and constitute the project's current architecture.
 
 | ADR | Decision | Rationale |
 | --- | --- | --- |
@@ -136,8 +137,8 @@ and a device probe cannot redefine the artifact.
 | `docs/TESTING.md` | Current checks and planned test layers. |
 | `docs/CONTRIBUTING.md` | Branch, commit, review, and documentation workflow. |
 | `docs/RELEASING.md` | SemVer policy and release checklist. |
-| `docs/INSTALL.md` | Installation contract; no executable instructions. |
-| `docs/QUICK_START.md` | Planned first-run flow; not available. |
+| `docs/INSTALL.md` | Installation contract; no release installer. |
+| `docs/QUICK_START.md` | Source diagnostic check and planned first-run flow. |
 | `docs/TROUBLESHOOTING.md` | Environment constraints and safe diagnostics. |
 | `docs/UNINSTALL.md` | Planned data locations and removal rules. |
 | `docs/adr/README.md` | ADR index, structure, and rules. |
@@ -271,8 +272,9 @@ cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 ```
 
-These commands are required from Stage 01 onward. Running them now would only
-report that no manifest exists.
+These commands are required from Stage 01 onward. Running them during Stage 00
+would only have reported that no manifest exists; the Stage 01 report records the
+commands after the workspace was created.
 
 ### 7.8 Commit identity correction
 
@@ -351,9 +353,10 @@ The following remain unmeasured:
 
 ### Limitations
 
-- There is no runnable GhostRAM artifact; the repository is documentation and
-  repository tooling only.
-- The ADRs remain Proposed; formal adoption is pending.
+- At Stage 00 completion there was no runnable GhostRAM artifact; the repository
+  was documentation and repository tooling only. Stage 01 later added a
+  source-buildable diagnostic CLI, not a release.
+- The five ADRs were accepted on 2026-10-20.
 - No engine build has been verified on this laptop by the project.
 - No engine version is pinned; baseline selection is deferred to Stage 04.
 - CUDA 13.x cannot build new Pascal device code; a CUDA 12.x toolchain is required
@@ -374,7 +377,7 @@ The following remain unmeasured:
 
 | Question | Decision |
 | --- | --- |
-| ADR-0001 through ADR-0005 | The technical directions were reviewed in principle. Formal adoption is pending, and decisions remain revisable when measurements arrive. |
+| ADR-0001 through ADR-0005 | Accepted on 2026-10-20. Decisions remain revisable when measurements arrive, through a superseding ADR. |
 | Engine build identity | Identity is derived from the executable hash and immutable metadata. Installation paths and timestamped capability observations are separate records. |
 | First engine build | Pin none yet. Choose the version/binary in the integration stage after verifying build, checksum, dependencies, and launch. |
 | Engine/model installation | Not in Stage 01. First installation and smoke test in Stage 04 or later, after the adapter exists, with separate maintainer approval. |
@@ -464,22 +467,23 @@ The maintenance and editorial passes also updated `AGENTS.md`, `README.md`,
 `CHANGELOG.md`, `docs/CONTRIBUTING.md`, `docs/RELEASING.md`,
 `docs/PROJECT_CHARTER.md`, `docs/ENGINE_SUPPORT.md`, `docs/PROJECT_STATUS.md`,
 `docs/ROADMAP.md`, `docs/ARCHITECTURE.md`, `docs/adr/README.md`, and ADR-0001
-through ADR-0005. The ADRs now use clean `Proposed (pending adoption)` status
-metadata without approval-history notes. ADR-0005 separates immutable
+through ADR-0005. The ADRs used clean `Proposed (pending adoption)` status
+metadata without approval-history notes during Stage 00 and were marked
+`Accepted` on 2026-10-20. ADR-0005 separates immutable
 build identity from installation records and timestamped capability
 observations, and `ARCHITECTURE.md` follows the same model.
 
-`PROJECT_STATUS.md` and `ROADMAP.md` reflect Stage 00 as complete, pending formal
-acceptance, with Stage 01 as the next recommended but unauthorized stage. The
-changelog records the documentation foundation and maintenance passes under
-`Unreleased`, not a release.
+`PROJECT_STATUS.md` and `ROADMAP.md` reflect Stage 00 as accepted and Stage 01 as
+implemented and awaiting review. The changelog records the documentation
+foundation, Stage 00 acceptance, and Stage 01 implementation under `Unreleased`,
+not a release.
 
 ## 14. Recommended next stage
 
-**Stage 01 — Minimal Rust workspace and diagnostic spine.** Not started and not
-authorized.
+**Stage 01 — Minimal Rust workspace and diagnostic spine.** Authorized on
+2026-10-20 and implemented; it is awaiting formal Stage 01 acceptance.
 
-Recommended scope:
+The delivered scope was:
 
 - create only `ghostram-core`, `ghostram-probe`, and `ghostram-cli`;
 - implement a read-only `ghostram doctor` for OS/kernel, CPU, RAM, swap/zram, GPU,
@@ -490,15 +494,11 @@ Recommended scope:
 - add Rust jobs to CI;
 - update the stage report, status, and roadmap.
 
-Stage 01 must not install an engine or model, download anything, launch inference,
+Stage 01 did not install an engine or model, download anything, launch inference,
 or implement the optimizer. Engine installation and the first real hardware smoke
-test need separate maintainer approval and belong in Stage 04 at the earliest.
-The first baseline build is selected there after build, checksum, dependency,
-device, and launch checks.
-
-Stage 01 remains blocked until Stage 00 is formally accepted and Stage 01 is
-explicitly authorized. The project decisions in section 10 clarify the engine and
-model approval boundary but do not start Stage 01.
+test still need separate maintainer approval and belong in Stage 04 at the
+earliest. The first baseline build is selected there after build, checksum,
+dependency, device, and launch checks.
 
 ## Completion checklist
 
@@ -506,7 +506,7 @@ model approval boundary but do not start Stage 01.
 - [x] Engine/backend research recorded with sources and confidence.
 - [x] Charter, architecture, methodology, and user-doc contracts written.
 - [x] Workflow and repository checks created.
-- [x] ADRs written and marked proposed.
+- [x] ADRs written and accepted.
 - [x] No engine, model, package, driver, or system setting changed.
 - [x] No push, tag, release, merge, branch creation, or branch deletion performed.
 - [x] No benchmark result fabricated or implied.
@@ -517,5 +517,5 @@ model approval boundary but do not start Stage 01.
 - [x] Documentation voice and ADR metadata normalized.
 - [x] ADR-0005 build-identity model refined and architecture updated.
 - [x] Validation results filled in after the final command run.
-- [ ] Maintainer review and formal Stage 00 acceptance.
-- [ ] Separate authorization to start Stage 01.
+- [x] Maintainer review and formal Stage 00 acceptance (2026-10-20).
+- [x] Separate authorization to start Stage 01 (2026-10-20).

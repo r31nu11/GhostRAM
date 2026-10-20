@@ -31,18 +31,22 @@ ADR and propose a superseding ADR with reasons.
 
 ## Current state
 
-- Stage 00 (technical reconnaissance and project charter) is complete pending
-  formal acceptance. The technical direction of the ADRs has been reviewed in
-  principle; all ADRs remain Proposed and adoption is pending.
-- There is no Rust workspace, no GhostRAM binary, no installed inference engine,
-  and no model catalog in this repository. Stage 01 has not started.
+- Stage 00 (technical reconnaissance and project charter) was accepted on
+  2026-10-20; ADR-0001 through ADR-0005 were adopted at the same time.
+- Stage 01 (minimal Rust workspace and diagnostic spine) is implemented and
+  awaiting formal acceptance. The workspace contains exactly `ghostram-core`,
+  `ghostram-probe`, and `ghostram-cli`, plus `Cargo.toml` and `Cargo.lock`.
+- A source-buildable `ghostram` binary provides read-only `doctor` and
+  `doctor --json` commands. There is no release artifact or installer, no installed
+  inference engine, no model catalog, and no engine runtime in this repository.
 - No benchmark results exist. Never imply that a planned benchmark was executed.
 - The primary laptop has a 4 GiB Pascal GPU and 7.4 GiB RAM. The secondary
   machine has not been accessed.
 
-Read [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md) for the volatile snapshot
-and [reports/stages/stage-00-technical-reconnaissance.md](reports/stages/stage-00-technical-reconnaissance.md)
-for the Stage 00 evidence.
+Read [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md) for the volatile snapshot.
+Read the accepted [Stage 00 report](reports/stages/stage-00-technical-reconnaissance.md)
+and the [Stage 01 report](reports/stages/stage-01-minimal-rust-workspace.md) for
+evidence and validation.
 
 ## Hard rules
 
@@ -74,16 +78,21 @@ for the Stage 00 evidence.
 | --- | --- |
 | `README.md` | Public project overview and current status. |
 | `AGENTS.md` | Repository policy and automation rules. |
+| `Cargo.toml`, `Cargo.lock` | Rust workspace definition and locked dependency graph. |
+| `crates/ghostram-core` | Engine-independent contracts, quantities, errors, and report models. |
+| `crates/ghostram-probe` | Read-only Linux diagnostics and bounded subprocess execution. |
+| `crates/ghostram-cli` | `ghostram` command line, human output, and JSON output. |
 | `docs/PROJECT_CHARTER.md` | Stable mission, MVP, non-goals, success criteria. |
 | `docs/PROJECT_STATUS.md` | Volatile current state; update every stage. |
 | `docs/ROADMAP.md` | Dependency-ordered stages; update every stage. |
 | `docs/ARCHITECTURE.md` | Components, boundaries, and data flow. |
+| `docs/DOCTOR_SCHEMA.md` | Versioned `ghostram.doctor/1` JSON contract. |
 | `docs/ENGINE_SUPPORT.md` | Engine/backend compatibility matrix and confidence. |
 | `docs/BENCHMARKING.md` | Measurement and reporting methodology. |
 | `docs/TESTING.md` | Current checks and planned test strategy. |
 | `docs/CONTRIBUTING.md` | Branch, commit, review, and documentation workflow. |
 | `docs/RELEASING.md` | SemVer policy and release checklist. |
-| `docs/INSTALL.md`, `docs/QUICK_START.md`, `docs/TROUBLESHOOTING.md`, `docs/UNINSTALL.md` | User-facing contracts; not yet executable instructions. |
+| `docs/INSTALL.md`, `docs/QUICK_START.md`, `docs/TROUBLESHOOTING.md`, `docs/UNINSTALL.md` | User-facing contracts and source-development diagnostics; no release installation exists. |
 | `docs/adr/` | Architecture decision records. |
 | `docs/research/` | Dated research evidence with sources and confidence. |
 | `reports/stages/` | Mandatory per-stage reports and template. |
@@ -109,9 +118,13 @@ for the Stage 00 evidence.
 
 ## Validation
 
-Current Stage 00 checks:
+Current Stage 01 checks:
 
 ```sh
+cargo fmt --all -- --check
+cargo clippy --workspace --all-targets --locked -- -D warnings
+cargo test --workspace --locked
+cargo build --workspace --locked
 python3 scripts/check_docs.py
 bash scripts/check-commit-range.sh <base-sha> HEAD
 git config --local --get user.name
@@ -119,18 +132,9 @@ git config --local --get user.email
 ```
 
 The two `git config` commands must report the maintainer's confirmed identity,
-never an automated or invented identity.
-
-Future stages must add, at minimum:
-
-```sh
-cargo fmt --all -- --check
-cargo clippy --workspace --all-targets -- -D warnings
-cargo test --workspace
-```
-
-Run commands from the repository root. Never claim a command passed unless its
-output was observed. If a command cannot run, document why.
+never an automated or invented identity. Run commands from the repository root.
+Never claim a command passed unless its output was observed. If a command cannot
+run, document why.
 
 ## Documentation rules
 
@@ -141,6 +145,8 @@ output was observed. If a command cannot run, document why.
 - `PROJECT_STATUS.md`: update at the end of every stage.
 - `ROADMAP.md`: update stage statuses and dependencies every stage.
 - `ARCHITECTURE.md`: update when components, boundaries, or data flow change.
+- `DOCTOR_SCHEMA.md`: update when the diagnostic JSON contract changes; a breaking
+  change requires a new schema identifier.
 - `ENGINE_SUPPORT.md`: update with evidence, not assumptions; keep confidence
   labels.
 - `BENCHMARKING.md`, `TESTING.md`: update when methods or commands change.

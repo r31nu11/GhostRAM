@@ -136,5 +136,5 @@ another GPU is not automatically supported here.
 | GitHub release | None. |
 | Artifact | None. |
 | Checksums | None. |
-| Changelog release section | None; only `Unreleased` documentation entries. |
-| Publication approval | Not requested; Stage 00 is pending formal acceptance. |
+| Changelog release section | None; only `Unreleased` entries for Stage 00 and the Stage 01 diagnostic implementation. |
+| Publication approval | Not requested; Stage 00 is accepted and Stage 01 is pending acceptance. No version or artifact exists. |

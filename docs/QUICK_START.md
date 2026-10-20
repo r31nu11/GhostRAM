@@ -1,15 +1,36 @@
 # Quick start
 
-**Status: not available.** GhostRAM has no executable, no release, and no
-working command-line interface. The flow below is a product contract for a future
-release, not instructions that work today.
+**Status: no release; source diagnostic available.** There is no installer or
+supported release. A developer can build the source and run the read-only
+`ghostram doctor` command. The multi-step inference flow below remains a product
+contract for a future release.
 
 Do not install an engine, download a model, or change system settings solely
 because this page describes a planned feature. Those actions require explicit
 user authorization. Within project development, engine or model installation also
 requires maintainer approval.
 
-## 1. Planned first-run flow
+## 1. Source-development diagnostic check
+
+This is not an end-user installation. It requires a Rust toolchain and operates on
+the source checkout:
+
+```sh
+cargo build --workspace --locked
+cargo run -p ghostram-cli -- doctor
+cargo run -p ghostram-cli -- doctor --json
+```
+
+`doctor` is read-only. It reports OS/kernel, CPU, RAM, swap/zram, storage, NVIDIA
+GPU/VRAM/driver, Vulkan devices, relevant tools, and discovered llama.cpp
+executables. Missing optional tools, GPUs, Vulkan devices, and engines are reported
+as unavailable or absent; the command still exits successfully when it can
+generate a report. The JSON contract is in [DOCTOR_SCHEMA.md](DOCTOR_SCHEMA.md).
+
+It does not install an engine, download a model, launch inference, benchmark
+anything, or change system settings.
+
+## 2. Planned first-run flow
 
 When an alpha exists, a new user should be able to:
 
@@ -36,7 +57,7 @@ When an alpha exists, a new user should be able to:
 
 These steps are planned. None has been implemented or validated end to end.
 
-## 2. What the first release will not do
+## 3. What the first release will not do
 
 - It will not install GPU drivers or a CUDA toolkit.
 - It will not silently download models or engines.
@@ -45,16 +66,18 @@ These steps are planned. None has been implemented or validated end to end.
 - It will not replace llama.cpp or another inference engine.
 - It will not require root or a system-wide daemon.
 
-## 3. Current alternatives
+## 4. Current alternatives
 
-There is nothing to quick-start in this repository. The documentation is the
-deliverable of Stage 00. If you are looking for a working local inference tool
-today, use the engine project directly and follow its own documentation; GhostRAM
-does not yet wrap or replace it.
+The only working GhostRAM command is the source-built read-only `doctor` check.
+There is no model catalog, planner, engine runtime, benchmark, or GUI to
+quick-start. If you are looking for a working local inference tool today, use the
+engine project directly and follow its own documentation; GhostRAM does not yet
+wrap or replace it.
 
-## 4. Related documents
+## 5. Related documents
 
 - [Installation contract](INSTALL.md)
 - [Project status](PROJECT_STATUS.md)
+- [Doctor schema](DOCTOR_SCHEMA.md)
 - [Troubleshooting](TROUBLESHOOTING.md)
 - [Benchmarking methodology](BENCHMARKING.md)

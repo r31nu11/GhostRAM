@@ -1,0 +1,2 @@
+version: 0.1.0-test (fixture build)
+built with clang for x86_64-linux

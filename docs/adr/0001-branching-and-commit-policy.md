@@ -1,6 +1,6 @@
 # ADR-0001: Branching, commits, and stage workflow
 
-**Status:** Proposed (pending adoption)
+**Status:** Accepted
 **Date:** 2026-10-20
 **Deciders:** `r31nu11` (project maintainer)
 **Related:** [CONTRIBUTING.md](../CONTRIBUTING.md), [ROADMAP.md](../ROADMAP.md), [Stage 00 report](../../reports/stages/stage-00-technical-reconnaissance.md)

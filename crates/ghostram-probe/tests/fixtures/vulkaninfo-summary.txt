@@ -1,0 +1,28 @@
+==========
+VULKANINFO
+==========
+
+Vulkan Instance Version: 1.4.363
+
+Devices:
+========
+GPU0:
+	apiVersion         = 1.4.354
+	driverVersion      = 26.2.4
+	vendorID           = 0x8086
+	deviceID           = 0x3e9b
+	deviceType         = PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU
+	deviceName         = Intel(R) UHD Graphics 630 (CFL GT2)
+	driverID           = DRIVER_ID_INTEL_OPEN_SOURCE_MESA
+	driverName         = Intel open-source Mesa driver
+	driverInfo         = Mesa 26.2.4-arch3.1
+GPU1:
+	apiVersion         = 1.4.312
+	driverVersion      = 580.178.4.0
+	vendorID           = 0x10de
+	deviceID           = 0x1c8c
+	deviceType         = PHYSICAL_DEVICE_TYPE_DISCRETE_GPU
+	deviceName         = NVIDIA GeForce GTX 1050 Ti
+	driverID           = DRIVER_ID_NVIDIA_PROPRIETARY
+	driverName         = NVIDIA
+	driverInfo         = 580.178.04

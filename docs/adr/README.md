@@ -8,16 +8,16 @@ for a stage report.
 
 | ADR | Title | Status |
 | --- | --- | --- |
-| [0001](0001-branching-and-commit-policy.md) | Branching, commits, and stage workflow | Proposed (pending adoption) |
-| [0002](0002-modular-monolith-and-crate-split.md) | Modular monolith and delayed crate split | Proposed (pending adoption) |
-| [0003](0003-engine-integration-strategy.md) | Process-based engine integration, official llama.cpp first | Proposed (pending adoption) |
-| [0004](0004-measurement-provenance.md) | Separate estimates from measurements and preserve provenance | Proposed (pending adoption) |
-| [0005](0005-pinned-engine-builds.md) | Separate engine build identity from installation and capability observations | Proposed (pending adoption) |
+| [0001](0001-branching-and-commit-policy.md) | Branching, commits, and stage workflow | Accepted |
+| [0002](0002-modular-monolith-and-crate-split.md) | Modular monolith and delayed crate split | Accepted |
+| [0003](0003-engine-integration-strategy.md) | Process-based engine integration, official llama.cpp first | Accepted |
+| [0004](0004-measurement-provenance.md) | Separate estimates from measurements and preserve provenance | Accepted |
+| [0005](0005-pinned-engine-builds.md) | Separate engine build identity from installation and capability observations | Accepted |
 
-"Proposed" means the decision is part of the Stage 00 review package and has not
-been adopted. Proposed ADRs describe the project's current intended direction and
-should guide work until they are adopted, superseded, or withdrawn. Decisions
-must be revisited when measurements show that an assumption is wrong.
+"Accepted" means the maintainer adopted the decision on 2026-10-20 as part of
+Stage 00 acceptance. Accepted ADRs guide work until they are superseded or
+deprecated. Decisions must be revisited when measurements show that an assumption
+is wrong; a changed decision requires a superseding ADR, not a silent rewrite.
 
 Do not record approval-history metadata in an ADR. Use the status field to show
 whether a decision is proposed, adopted, rejected, superseded, or deprecated.

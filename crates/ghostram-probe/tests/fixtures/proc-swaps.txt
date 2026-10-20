@@ -1,0 +1,2 @@
+Filename				Type		Size		Used		Priority
+/dev/zram0                              partition	7801852		10712		100

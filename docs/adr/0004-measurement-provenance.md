@@ -1,6 +1,6 @@
 # ADR-0004: Separate estimates from measurements and preserve provenance
 
-**Status:** Proposed (pending adoption)
+**Status:** Accepted
 **Date:** 2026-10-20
 **Deciders:** `r31nu11` (project maintainer)
 **Related:** [ARCHITECTURE.md](../ARCHITECTURE.md), [BENCHMARKING.md](../BENCHMARKING.md)

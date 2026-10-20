@@ -1,6 +1,6 @@
 # ADR-0005: Separate engine build identity from installation and capability observations
 
-**Status:** Proposed (pending adoption)
+**Status:** Accepted
 **Date:** 2026-10-20
 **Deciders:** `r31nu11` (project maintainer)
 **Related:** [ENGINE_SUPPORT.md](../ENGINE_SUPPORT.md), [ARCHITECTURE.md](../ARCHITECTURE.md), [ADR-0003](0003-engine-integration-strategy.md)

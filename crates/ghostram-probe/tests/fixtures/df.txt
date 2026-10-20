@@ -1,0 +1,2 @@
+Filesystem         1-blocks        Used   Available Capacity Mounted on
+/dev/sdb2      124895825920 74701832192 43802386432      64% /

@@ -1,0 +1,6 @@
+NAME="CachyOS Linux"
+PRETTY_NAME="CachyOS Linux"
+ID=cachyos
+ID_LIKE=arch
+BUILD_ID=rolling
+VERSION="rolling"

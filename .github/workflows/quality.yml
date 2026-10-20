@@ -1,7 +1,8 @@
 name: Quality
 
-# CI validates documentation and commit-message format. It does not authorize a
-# push, promotion to main, a tag, or a GitHub Release; those remain owner decisions.
+# CI validates Rust quality, documentation, and commit-message format. It does not
+# authorize a push, promotion to main, a tag, or a GitHub Release; those remain
+# owner decisions.
 
 on:
   push:
@@ -27,6 +28,26 @@ jobs:
       - name: Run documentation checks
         run: python3 scripts/check_docs.py
 
+  rust:
+    name: Rust quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Install stable Rust with rustfmt and Clippy
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+      - name: Run Clippy
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - name: Run tests
+        run: cargo test --workspace --locked
+      - name: Build with locked dependencies
+        run: cargo build --workspace --locked
+
   commit-messages:
     name: Commit messages
     runs-on: ubuntu-latest
@@ -46,5 +67,5 @@ jobs:
           fi
           bash scripts/check-commit-range.sh "$BASE_SHA" "$HEAD_SHA"
 
-# Rust formatting, linting, and tests will be added when the workspace lands in
-# Stage 01. The jobs above are intentionally dependency-free.
+# The Rust job is the only dependency-bearing job. Documentation and commit-message
+# checks remain standard-library or shell only.

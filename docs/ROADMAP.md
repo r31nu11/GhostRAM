@@ -7,6 +7,7 @@ criteria.
 
 ## Status legend
 
+- **Accepted:** the maintainer has formally accepted the stage result.
 - **Complete (pending acceptance):** work and report exist; maintainer acceptance
   pending.
 - **Next:** the recommended next stage, subject to its approval gate.
@@ -18,9 +19,9 @@ criteria.
 
 | Stage | Title | State | Depends on |
 | --- | --- | --- | --- |
-| 00 | Technical reconnaissance and project charter | Complete (pending acceptance) | — |
-| 01 | Minimal Rust workspace and diagnostic spine | Next (blocked) | 00 |
-| 02 | GGUF model catalog and identity | Planned | 01 |
+| 00 | Technical reconnaissance and project charter | Accepted (2026-10-20) | — |
+| 01 | Minimal Rust workspace and diagnostic spine | Complete (pending acceptance) | 00 |
+| 02 | GGUF model catalog and identity | Next (blocked) | 01 |
 | 03 | Memory planner and safety budgets | Planned | 02 |
 | 04 | Engine adapter and supervised runtime | Planned | 01, 03 |
 | 05 | Benchmark harness and reports | Planned | 03, 04 |
@@ -30,55 +31,61 @@ criteria.
 
 ## Stage 00 — Technical reconnaissance and project charter
 
-**State:** Complete, pending formal acceptance.
+**State:** Accepted on 2026-10-20.
 
 **Delivered:** starting-state and environment observations; engine/backend
 research with sources; initial integration strategy; architecture boundaries;
 MVP and non-goals; benchmark methodology; branch/commit/release workflow;
-documentation contracts; Stage 00 report.
+documentation contracts; Stage 00 report; ADR-0001 through ADR-0005.
 
-**Gate:** the maintainer reviews the report and ADR text, formally accepts the
-stage, and authorizes Stage 01. The technical direction of the ADRs was reviewed
-in principle on 2026-10-20; that is not formal adoption or stage acceptance and
-does not start Stage 01.
+**Gate:** met. The maintainer accepted the report and adopted the ADRs, then
+authorized Stage 01.
 
 ## Stage 01 — Minimal Rust workspace and diagnostic spine
 
-**State:** Next, blocked until Stage 00 is formally accepted and Stage 01 is
-explicitly authorized.
+**State:** Complete, pending formal acceptance.
 
 **Goal:** prove the toolchain and produce a trustworthy read-only environment
 report without touching engines or models.
 
-**Scope:**
+**Delivered:**
 
-- Create a Cargo workspace with only the crates justified by ADR-0002; expected:
-  `ghostram-core`, `ghostram-probe`, `ghostram-cli`.
-- Define typed units, IDs, errors, and a versioned JSON envelope in core.
-- Implement Linux probes for OS/kernel, CPU, RAM, swap/zram, NVIDIA GPU and
-  driver, Vulkan devices, storage, and relevant tools.
-- Implement engine *discovery* (paths and `--version`/`--list-devices` probes)
-  without launching inference.
-- Add `ghostram doctor` with human-readable and JSON output.
-- Add unit tests with fixtures/mocks for parsers; manual run on the laptop.
-- Add Rust formatting, linting, and test checks to CI.
-- Update status, roadmap, and Stage 01 report.
+- Cargo workspace with exactly `ghostram-core`, `ghostram-probe`, and
+  `ghostram-cli`, plus `Cargo.lock`.
+- Typed byte quantities, diagnostic states, system models, typed errors, and a
+  versioned `ghostram.doctor/1` envelope in core.
+- Read-only Linux probes for OS/kernel, CPU, RAM, swap/zram, `/` storage, NVIDIA
+  GPU and driver, Vulkan devices, relevant tools, and llama.cpp executable
+  discovery.
+- Bounded subprocess execution with explicit paths and argument arrays, output
+  limits, timeouts, and direct-child cleanup.
+- `ghostram doctor` human-readable output and `ghostram doctor --json`.
+- Deterministic parser fixtures, malformed-input tests, partial-report tests, and
+  CLI integration tests.
+- Rust formatting, Clippy, test, and locked-build checks in CI.
+- Updated schema, status, roadmap, architecture, testing, user, and stage
+  documentation.
 
-**Acceptance:**
+**Acceptance evidence:** `cargo fmt --all -- --check`,
+`cargo clippy --workspace --all-targets --locked -- -D warnings`,
+`cargo test --workspace --locked`, and `cargo build --workspace --locked` passed.
+The command was run on the primary laptop and reported the observed GPU, driver,
+RAM, swap, and Vulkan devices. Missing engines were reported as an available empty
+discovery result. No packages, engines, models, or settings were changed. Exact
+results and unverified items are in the
+[Stage 01 report](../reports/stages/stage-01-minimal-rust-workspace.md).
 
-- `cargo fmt --check`, `cargo clippy -D warnings`, and `cargo test` pass.
-- `ghostram doctor` runs on the primary laptop and reports the observed GPU,
-  driver, RAM, swap, and Vulkan devices.
-- Missing engines/models are reported as absent, not as errors.
-- No packages installed, no engine installed, no model downloaded, and no system
-  settings changed.
-- Report states what was not verified.
+**Gate:** the maintainer reviews the Stage 01 report and accepts the stage.
+Acceptance does not authorize a push, tag, release, or Stage 02.
 
 **Non-goals:** engine installation, model download, inference launch, GGUF parsing,
-memory estimates, benchmarks, GUI. Engine discovery may inspect paths and run
+memory estimates, benchmarks, GUI. Engine discovery may inspect `PATH` and run
 read-only version/device probes, but must not install or launch inference.
 
 ## Stage 02 — GGUF model catalog and identity
+
+**State:** Next, blocked until Stage 01 is accepted and Stage 02 is explicitly
+authorized.
 
 **Goal:** discover models safely and understand their metadata before launching
 anything.

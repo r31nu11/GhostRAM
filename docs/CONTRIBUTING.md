@@ -1,8 +1,8 @@
 # Contributing
 
-**Status:** Stage 00 workflow contract. The repository has no runnable
-application code yet; the workflow below applies to documentation, research, and
-future implementation stages.
+**Status:** Stage 01 workflow contract. The repository contains a Rust workspace
+with a read-only diagnostic CLI. The workflow below applies to Rust code, tests,
+scripts, documentation, and research.
 
 The project maintainer is `r31nu11` (GitHub account `r31nu11`). Branches,
 commits, and releases follow the policy below.
@@ -169,7 +169,10 @@ Before requesting review, verify:
 - [ ] The change matches the current stage's scope and acceptance criteria.
 - [ ] Unrelated user work is untouched.
 - [ ] New behavior has tests, or the report states why it cannot be tested.
-- [ ] `cargo fmt`, `cargo clippy`, and `cargo test` pass once a workspace exists.
+- [ ] `cargo fmt --all -- --check` passes.
+- [ ] `cargo clippy --workspace --all-targets --locked -- -D warnings` passes.
+- [ ] `cargo test --workspace --locked` passes.
+- [ ] `cargo build --workspace --locked` passes.
 - [ ] `python3 scripts/check_docs.py` passes.
 - [ ] Commit messages in the range pass `scripts/check-commit-range.sh`.
 - [ ] Author and committer use the maintainer's confirmed identity; no
@@ -185,8 +188,9 @@ compensate for a missing hardware test or an unsupported performance claim.
 
 ## 6. Documentation changes
 
-- User-facing docs must label planned behavior as planned. Do not write commands
-  for a binary that does not exist.
+- User-facing docs must label planned behavior as planned. Source-development
+  commands may be documented only when the current workspace provides them; never
+  present them as a released installation.
 - Research notes carry an access date and distinguish observed, reported, and
   hypothetical claims. Use the confidence labels in
   [ENGINE_SUPPORT.md](ENGINE_SUPPORT.md).
@@ -196,15 +200,19 @@ compensate for a missing hardware test or an unsupported performance claim.
   sections.
 - Do not fabricate measurements. Write "not measured" when nothing was measured.
 
-## 7. Code style (future)
+## 7. Code style
 
 - Rust 2024 edition, stable toolchain unless an ADR pins otherwise.
-- `cargo fmt` is authoritative for formatting.
+- `cargo fmt --all` is authoritative for formatting.
 - Clippy warnings are errors in CI (`-D warnings`).
 - Public library APIs use typed errors and documented units.
 - No `unsafe` without a documented safety argument and tests.
 - No shell string construction for engine arguments; pass argument arrays.
 - Keep domain logic out of CLI and UI adapters.
+- The current crate split is `ghostram-core`, `ghostram-probe`, and
+  `ghostram-cli`. Do not add a crate until the dependency boundary requires it.
+- Read-only external commands are bounded and pass explicit executable paths.
+  Missing optional tools are observations, not panics.
 
 ## 8. Merge and stage completion
 

@@ -1,11 +1,12 @@
 # Installation
 
-**Status: contract only. GhostRAM is not installable yet.** There is no release,
-no package, and no binary. Do not run installation commands from this document;
-none are provided because they would be false.
+**Status: contract plus source-development notes. GhostRAM is not installable
+yet.** There is no release, package, or installer. A source-buildable `ghostram`
+binary exists in the repository, but that is a development artifact, not a
+supported installation.
 
-This page defines what "installed" will mean. The final, executable instructions
-will be written and tested in Stage 08.
+This page defines what "installed" will mean. The final, executable end-user
+instructions will be written and tested in Stage 08.
 
 ## 1. What will be required for ordinary users
 
@@ -72,7 +73,7 @@ will not describe an unsigned download as "verified".
 
 | Item | State |
 | --- | --- |
-| GhostRAM binary | Does not exist. |
+| GhostRAM source binary | Buildable with Cargo; `ghostram doctor` is implemented. |
 | Release artifact | None. |
 | Package repository | None. |
 | Supported distribution list | Not decided. |
@@ -82,11 +83,20 @@ will not describe an unsigned download as "verified".
 
 If you want to work on the source repository, see
 [CONTRIBUTING.md](CONTRIBUTING.md). That is a development workflow, not a user
-installation, and it currently produces no application.
+installation. A developer can build and run the read-only diagnostic command:
+
+```sh
+cargo build --workspace --locked
+cargo run -p ghostram-cli -- doctor
+cargo run -p ghostram-cli -- doctor --json
+```
+
+These commands require a Rust toolchain and compile the workspace. They do not
+install GhostRAM, create a package, install an engine, or download a model.
 
 ## 6. Related documents
 
-- [Quick start](QUICK_START.md) — planned first-run flow, not yet available.
+- [Quick start](QUICK_START.md) — source diagnostic check and planned first-run flow.
 - [Troubleshooting](TROUBLESHOOTING.md) — current limitations and diagnostics.
 - [Uninstall](UNINSTALL.md) — planned data locations and removal rules.
 - [Releasing](RELEASING.md) — release policy and checklist.

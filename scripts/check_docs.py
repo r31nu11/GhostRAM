@@ -2,7 +2,7 @@
 """Lightweight documentation integrity checks for GhostRAM.
 
 This is intentionally dependency-free: it runs with the Python standard library
-and checks the properties that matter for the Stage 00 documentation contract.
+and checks the properties that matter for the current documentation contract.
 It is not a general-purpose Markdown linter.
 """
 
@@ -19,10 +19,13 @@ REQUIRED_FILES = [
     "README.md",
     "AGENTS.md",
     "CHANGELOG.md",
+    "Cargo.toml",
+    "Cargo.lock",
     "docs/PROJECT_CHARTER.md",
     "docs/PROJECT_STATUS.md",
     "docs/ROADMAP.md",
     "docs/ARCHITECTURE.md",
+    "docs/DOCTOR_SCHEMA.md",
     "docs/TESTING.md",
     "docs/ENGINE_SUPPORT.md",
     "docs/CONTRIBUTING.md",
@@ -34,6 +37,7 @@ REQUIRED_FILES = [
     "docs/RELEASING.md",
     "docs/adr/README.md",
     "reports/stages/stage-00-technical-reconnaissance.md",
+    "reports/stages/stage-01-minimal-rust-workspace.md",
     "reports/stages/TEMPLATE.md",
     "reports/benchmarks/README.md",
 ]
@@ -129,14 +133,15 @@ def check_adrs(errors: list[str]) -> None:
                 )
 
 
-def check_stage_report(errors: list[str]) -> None:
-    path = ROOT / "reports/stages/stage-00-technical-reconnaissance.md"
-    if not path.is_file():
-        return
-    text = path.read_text(encoding="utf-8")
-    for heading in REQUIRED_REPORT_SECTIONS:
-        if heading not in text:
-            errors.append(f"{path.relative_to(ROOT)}: missing stage report section: {heading}")
+def check_stage_reports(errors: list[str]) -> None:
+    report_paths = sorted(ROOT.glob("reports/stages/stage-[0-9][0-9][0-9][0-9]-*.md"))
+    for path in report_paths:
+        text = path.read_text(encoding="utf-8")
+        for heading in REQUIRED_REPORT_SECTIONS:
+            if heading not in text:
+                errors.append(
+                    f"{path.relative_to(ROOT)}: missing stage report section: {heading}"
+                )
 
 
 def main() -> int:
@@ -149,7 +154,7 @@ def main() -> int:
         checked_links += check_links(path, errors)
 
     check_adrs(errors)
-    check_stage_report(errors)
+    check_stage_reports(errors)
 
     if errors:
         print(f"documentation check failed with {len(errors)} error(s):", file=sys.stderr)

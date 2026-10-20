@@ -1,8 +1,10 @@
 # Engine support and integration matrix
 
 **Research date:** 2026-10-20 (UTC).
-**Status:** Stage 00 proposal. No combination below has been executed by GhostRAM
-on the primary laptop. "Expected" does not mean "verified".
+**Status:** Stage 00 research accepted; Stage 01 implements read-only discovery
+only. No engine combination below has been executed by GhostRAM on the primary
+laptop. "Expected" does not mean "verified", and a discovered executable does not
+mean "supported".
 **Canonical evidence:** [research notes](research/2026-10-20-engine-landscape.md).
 **Decision:** [ADR-0003](adr/0003-engine-integration-strategy.md).
 
@@ -41,9 +43,9 @@ A row may mix labels; each claim keeps its own label.
 7. **Pin and record the identity of every engine build.** Do not build tests
    around "latest". Record the executable hash and known provenance, and keep
    installation paths and device observations separate. No specific build is
-   pinned in Stage 00; select the first baseline during Stage 04 integration
-   after verifying the build, checksum, dependencies, device visibility, and
-   launch.
+   pinned in Stage 00 or Stage 01; select the first baseline during Stage 04
+   integration after verifying the build, checksum, dependencies, device
+   visibility, and launch.
 8. **Record capabilities per build and runtime context.** Never infer a build's
    support solely from the engine family, from a flag appearing in `--help`, or
    from a probe on a different backend or device.
@@ -52,6 +54,20 @@ A row may mix labels; each claim keeps its own label.
 10. **Detect external installations in the MVP.** Do not bundle engine binaries. A
     later voluntary download of a verified build into a managed directory requires
     explicit consent, checksums, and a license review.
+
+### 2.1 Stage 01 discovery behavior
+
+Stage 01 searches `PATH` only for `llama-server`, `llama-bench`, and `llama-cli`.
+For a found executable it runs bounded read-only queries: `--version` for all three
+and `--list-devices` for `llama-server`. It records the path, any version text, any
+device list, and a `partial` state with a reason if a probe fails or times out.
+
+Discovery does not verify that an executable runs inference, contains code for
+compute capability 6.1, supports a Vulkan device, accepts a model format, or works
+with an installed runtime. It does not install, update, or launch an engine. On the
+development laptop no llama.cpp executable was installed, so the Stage 01 report
+contains an empty engine list. That is an absence observation, not a support
+result.
 
 ## 3. Compatibility and investigation matrix
 

@@ -1,6 +1,7 @@
 # GhostRAM project charter
 
-**Status:** Stage 00 proposal; pending formal acceptance.
+**Status:** Accepted with Stage 00 on 2026-10-20. The mission is stable; changes
+require an explicit product decision.
 **Last substantive revision:** 2026-10-20.
 **Maintainer:** `r31nu11` (project maintainer).
 

@@ -1,4 +1,4 @@
-# Rust build output (workspace will be added in a later stage)
+# Rust build output (the workspace is tracked; target directories are not)
 /target/
 **/target/
 

@@ -1,0 +1,22 @@
+[package]
+name = "ghostram-cli"
+description = "Command-line interface for GhostRAM"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+
+[[bin]]
+name = "ghostram"
+path = "src/main.rs"
+
+[dependencies]
+ghostram-core.workspace = true
+ghostram-probe.workspace = true
+serde_json.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
