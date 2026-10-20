@@ -18,7 +18,7 @@ These observations were made on 2026-10-20 and may change:
 
 | Symptom | Likely cause | What is known |
 | --- | --- | --- |
-| CUDA 13 build fails or does not use the GPU | CUDA 13 removed offline compilation and library support for Pascal (compute capability 6.1). | Use a CUDA 12.x build or Vulkan. The distro `cuda` package is 13.4.x and is unsuitable for a Pascal CUDA build. |
+| CUDA 13 toolkit cannot build for Pascal | CUDA 13 removed offline compilation and library support for Pascal (compute capability 6.1). | Use a CUDA 12.x toolkit to build for Pascal, or use Vulkan. The distro `cuda` package is 13.4.x and is unsuitable as a Pascal build toolchain. A prebuilt labeled CUDA 13.x must be checked for actual device code and runtime libraries; the label alone proves neither compatibility nor incompatibility. |
 | Vulkan runs on the Intel iGPU instead of the NVIDIA GPU | Both Intel UHD 630 and NVIDIA GTX 1050 Ti expose Vulkan devices. | Explicit NVIDIA device selection is required. Do not assume the first enumerated device is discrete. |
 | The machine becomes sluggish or the OOM killer fires | 7.4 GiB RAM and 4 GiB VRAM are shared with the desktop; swap is zram. | Use conservative budgets, smaller contexts, and one engine at a time. A successful load is not proof of usability. |
 | A prebuilt CUDA binary does not start | `libcudart`, cuBLAS, or a compatible runtime may be missing. | The official CUDA archive ships runtime assets separately; a toolkit alone is not the only option. This was not tested locally. |

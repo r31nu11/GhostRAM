@@ -207,8 +207,12 @@ depending on the toolkit version.
 
 Consequences:
 
-- A CUDA 13.x build cannot target this GPU. The distro's `cuda 13.4.3` package is
-  therefore unsuitable for a Pascal-targeted CUDA build.
+- A CUDA 13.x toolkit cannot compile new device code targeting this GPU. The
+  distro's `cuda 13.4.3` package is therefore unsuitable for a Pascal-targeted
+  CUDA build.
+- This is a toolchain constraint, not a blanket runtime verdict on every
+  CUDA 13.x-labeled artifact. A prebuilt's actual GPU code, bundled libraries,
+  driver requirements, and execution environment must be inspected and tested.
 - The official CUDA 12.8 Linux asset is expected to contain `61-virtual` PTX and
   rely on driver JIT. This is a source-level expectation, not a local execution.
 - A native build with `-DCMAKE_CUDA_ARCHITECTURES=61` is expected to work with
@@ -335,8 +339,9 @@ maintenance.
 
 1. **Capability is per build.** Family documentation cannot answer whether this
    executable on this driver enables a backend or accepts a model type.
-2. **CUDA 13 is a trap on Pascal.** The version is recent but cannot target
-   compute capability 6.1.
+2. **CUDA 13.x is not a Pascal build toolchain.** The version is recent but
+   cannot target compute capability 6.1; any CUDA 13.x-labeled prebuilt still
+   requires artifact-level inspection and testing.
 3. **Two Vulkan devices.** Device selection is part of correctness, not a detail.
 4. **4 GiB VRAM is the binding constraint.** A model that loads may still be
    unusably slow or force the host into zram.

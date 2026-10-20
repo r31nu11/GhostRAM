@@ -328,7 +328,9 @@ The following remain unmeasured:
   review is pending.
 - No engine build has been verified on this laptop by the project.
 - No engine version is pinned; baseline selection is deferred to Stage 04.
-- CUDA 13.x is unsuitable for Pascal; a CUDA 12.8 build or Vulkan is required.
+- CUDA 13.x cannot build new Pascal device code; a CUDA 12.x toolchain is required
+  for a Pascal-targeted CUDA build, with Vulkan as fallback. A CUDA 13.x-labeled
+  prebuilt remains artifact-specific and unverified.
 - `libcudart` and cuBLAS are not installed locally; the official CUDA archive may
   require a separate runtime asset.
 - The 4 GiB VRAM / 7.4 GiB RAM budget is tight; usable model sizes are unknown.

@@ -18,8 +18,9 @@ Evidence gathered in Stage 00:
 - Official llama.cpp provides CPU, CUDA, and Vulkan backends, a server HTTP API,
   and `llama-bench` with JSON output.
 - CUDA 13.0 removed offline compilation and library support for Pascal. A CUDA
-  12.x build is required to target compute capability 6.1; CUDA 13.4 is
-  unsuitable.
+  12.x toolkit is required to build for compute capability 6.1; CUDA 13.4 is not
+  a Pascal build toolchain. A prebuilt's compatibility is a separate,
+  artifact-level question.
 - The official CUDA 12.8 Linux archive is expected to include `61-virtual` PTX,
   but this was not executed locally.
 - Vulkan does not require the CUDA toolkit, but this laptop exposes both Intel UHD
@@ -41,8 +42,10 @@ is far outside the MVP and would delay the control-plane work.
 3. Preserve **CPU** as the baseline and fallback backend.
 4. Treat CUDA and Vulkan as separate build/backend configurations with separate
    capability probes and measurements.
-5. On Pascal hardware, use a **CUDA 12.x** build or **Vulkan**. Do not use CUDA
-   13.x builds for compute capability 6.1.
+5. On Pascal hardware, use a build produced with a **CUDA 12.x** toolkit or
+   **Vulkan**. CUDA 13.x cannot build for compute capability 6.1. Do not infer a
+   prebuilt's compatibility from its CUDA label alone; probe the actual device
+   code and libraries.
 6. Treat **PrismML as an optional later adapter/profile**, not the default. Add it
    only when a concrete model or capability need is demonstrated and measured.
 7. Probe capabilities per installed build. Do not infer support from the engine
@@ -101,8 +104,9 @@ Follow-up:
 - **Adopt PrismML first:** potentially useful low-bit formats on 4 GiB, but a
   fast-moving fork with unproven value on Pascal; it would expand the test burden
   before the control plane works.
-- **Use CUDA 13.x on Pascal:** rejected by upstream support removal; it cannot
-  target compute capability 6.1.
+- **Use CUDA 13.x on Pascal:** rejected as a build-toolchain choice because it
+  cannot target compute capability 6.1; individual prebuilt compatibility would
+  still require artifact-level evidence.
 
 ## References
 

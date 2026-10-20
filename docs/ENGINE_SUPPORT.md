@@ -30,8 +30,11 @@ A row may mix labels; each claim keeps its own label.
    runtime.
 4. **Treat CUDA and Vulkan as separate build/backend configurations.** They have
    different toolchains, device visibility, failure modes, and performance.
-5. **On this Pascal laptop, use a CUDA 12.x build or Vulkan.** Do not use CUDA
-   13.x builds for compute capability 6.1.
+5. **On this Pascal laptop, use a CUDA 12.x toolchain for a CUDA build, or use
+   Vulkan.** CUDA 13.x cannot compile new device code for compute capability 6.1.
+   A prebuilt labeled CUDA 13.x is a separate case: inspect its actual GPU code,
+   bundled libraries, driver requirements, and execution environment before
+   treating it as compatible or incompatible.
 6. **Evaluate PrismML later as an optional adapter/profile**, not as the default
    engine. It is upstream llama.cpp plus additional low-bit formats and drafters;
    its value on 4 GiB Pascal must be measured.
@@ -52,16 +55,22 @@ A row may mix labels; each claim keeps its own label.
 Legend: `cc` = compute capability; `ngl` = GPU layers; `KV` = key/value cache;
 `FA` = Flash Attention; `ctx` = context size; `fit` = engine memory fitting.
 
+Version `b11756` below is the research snapshot, not a selected baseline. A
+CUDA 13.x backend label refers to a CUDA build family; it does not by itself
+establish whether a particular prebuilt contains Pascal device code or compatible
+runtime libraries. Those are artifact-level properties to inspect and probe, not
+assumptions from the label.
+
 | Engine / distribution | Backend | Relevant hardware | Model formats | Configuration capabilities | Integration approach | Measurement approach | Known limitations | Evidence and sources | Open questions |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Official llama.cpp 0.7.0 / nightly b11756 | CPU | Intel i7-8750H, 6C/12T, AVX2 | GGUF | `ngl 0`, threads, ctx, batch/ubatch, KV types, FA, mmap/mlock, fit | Process adapter; `llama-server` + `llama-bench` | `llama-bench -o json`; server `timings`; external memory sampler | CPU is slow for larger models; thermal/power effects; no GPU offload | [README](https://github.com/ggml-org/llama.cpp), [build guide](https://github.com/ggml-org/llama.cpp/blob/master/docs/build.md), local toolchain observation | Which CPU thread count is best on 6C/12T under GPU offload? |
 | Official llama.cpp 0.7.0 / b11756 | CUDA 12.8, Linux x64 | GTX 1050 Ti Mobile, 4 GiB, cc 6.1 | GGUF | `ngl`, KV types, ctx, batch/ubatch, FA, fit, device selection | Prebuilt binary + CUDA runtime asset or toolkit; process adapter | `llama-bench -o json`; server `timings`; NVML/`nvidia-smi`; `/proc` | Build likely contains `61-virtual` PTX, not native SASS; `libcudart`/cuBLAS not installed locally; no test yet | [CUDA build docs](https://github.com/ggml-org/llama.cpp/blob/master/docs/build.md#cuda), [CUDA CMake](https://github.com/ggml-org/llama.cpp/blob/master/ggml/src/ggml-cuda/CMakeLists.txt), [b11756 assets](https://github.com/ggml-org/llama.cpp/releases/tag/b11756) | Does the prebuilt run on cc 6.1? Is native `61` build faster or more reliable? |
-| Official llama.cpp 0.7.0 / b11756 | CUDA 13.4, Linux x64 | GTX 1050 Ti Mobile, cc 6.1 | GGUF | n/a for this GPU | **Do not use on Pascal** | n/a | CUDA 13 removed offline compilation/library support for Pascal; llama.cpp CMake omits 50/61/70 for toolkit >= 13 | [CUDA 13.0 release notes](https://docs.nvidia.com/cuda/archive/13.0.0/cuda-toolkit-release-notes/index.html), [CUDA CMake](https://github.com/ggml-org/llama.cpp/blob/master/ggml/src/ggml-cuda/CMakeLists.txt) | None for this laptop; relevant only to newer GPUs |
+| Official llama.cpp 0.7.0 / b11756 | CUDA 13.4, Linux x64 | GTX 1050 Ti Mobile, cc 6.1 | GGUF | Unknown; not a Pascal build target | Not recommended; inspect the actual artifact | Artifact-level device-code and library probe | CUDA 13 removed offline compilation/library support for Pascal; llama.cpp CMake omits 50/61/70 for toolkit >= 13. The CUDA 13.4-labeled prebuilt was not inspected, so neither support nor universal incompatibility is assumed. | [CUDA 13.0 release notes](https://docs.nvidia.com/cuda/archive/13.0.0/cuda-toolkit-release-notes/index.html), [CUDA CMake](https://github.com/ggml-org/llama.cpp/blob/master/ggml/src/ggml-cuda/CMakeLists.txt) | Does this prebuilt contain Pascal device code, or only newer architectures? |
 | Official llama.cpp 0.7.0 / b11756 | Vulkan, Linux x64 | GTX 1050 Ti Mobile, 4 GiB; Intel UHD 630 also visible | GGUF | `ngl`, KV types, ctx, batch/ubatch, FA, fit, explicit device selection | Prebuilt Vulkan binary; process adapter | Same as CUDA, plus device-specific selection | Two Vulkan devices; default may choose the Intel iGPU; pre-Turing code paths; performance vs CUDA unknown | Local `vulkaninfo --summary`, [b11756 Vulkan asset](https://github.com/ggml-org/llama.cpp/releases/tag/b11756), [Vulkan build docs](https://github.com/ggml-org/llama.cpp/blob/master/docs/build.md#vulkan) | Which device name/ID reliably selects the NVIDIA GPU? Is Vulkan faster than CUDA 12.8 on Pascal? |
 | Official llama.cpp | CPU / CUDA 12.x / Vulkan | GTX 1070, 8 GiB, cc 6.1 (secondary machine) | GGUF | Same family controls | Same adapter; separate hardware fingerprint | Same | Machine not accessed; CPU model and exact driver unverified | Project brief only; no local observation | Access date, driver, performance, and whether results transfer from the 1050 Ti |
 | PrismML fork (`PrismML-Eng/llama.cpp`, branch `prism`) | CUDA 12.8, Linux x64 | GTX 1050 Ti Mobile, cc 6.1 | GGUF including `Q2_0`, `PQ2_0`, `PTQ1_0`; MTP/DFlash2 drafters | Upstream controls plus fork-specific model types and speculative decoding | Same process/HTTP adapter with a PrismML build profile; optional | Same as CUDA; model-load success/failure; speculative `timings` fields | Fork tracks upstream but adds 171 commits (at access); model-specific; MTP on Pascal uncertain; no independent test | [PrismML README](https://github.com/PrismML-Eng/llama.cpp), [docs](https://docs.prismml.com/run/llamacpp), [formats](https://docs.prismml.com/download/formats), [Pascal commit](https://github.com/PrismML-Eng/llama.cpp/commit/483bdaba) | Does it measurably help on 4 GiB? Do PQ2_0/PTQ1_0 and MTP work on Pascal? |
 | PrismML fork | Vulkan, Linux x64 | GTX 1050 Ti Mobile | Same fork formats | Upstream controls plus fork formats | Optional profile; same process adapter | Same | Vendor matrix marks Vulkan PQ2_0/PTQ1_0 as partial/device-dependent; no local test | [Backend support](https://github.com/PrismML-Eng/Bonsai-demo/blob/main/BACKEND-SUPPORT.md), [Prism release](https://github.com/PrismML-Eng/llama.cpp/releases/tag/prism-b10787-73bfe6c) | Do the fork shaders select the NVIDIA device and run correctly? |
-| PrismML fork | CUDA 13.3, Linux x64 | GTX 1050 Ti Mobile, cc 6.1 | Fork formats | n/a | **Do not use on Pascal** | n/a | CUDA 13 drops Pascal; fork CMake inherits upstream architecture logic | [CUDA 13.0 release notes](https://docs.nvidia.com/cuda/archive/13.0.0/cuda-toolkit-release-notes/index.html), [Prism CMake](https://github.com/PrismML-Eng/llama.cpp/blob/prism/ggml/src/ggml-cuda/CMakeLists.txt) | None for this laptop |
+| PrismML fork | CUDA 13.3, Linux x64 | GTX 1050 Ti Mobile, cc 6.1 | Fork formats | Unknown; not a Pascal build target | Not recommended; inspect the actual artifact | Artifact-level device-code and library probe | CUDA 13 removed offline compilation/library support for Pascal; fork CMake inherits upstream architecture logic. The CUDA 13.3-labeled prebuilt was not inspected. | [CUDA 13.0 release notes](https://docs.nvidia.com/cuda/archive/13.0.0/cuda-toolkit-release-notes/index.html), [Prism CMake](https://github.com/PrismML-Eng/llama.cpp/blob/prism/ggml/src/ggml-cuda/CMakeLists.txt) | Does this prebuilt contain Pascal device code? |
 | Official llama.cpp / PrismML | CUDA 12.x or Vulkan | Windows + GTX 1050 Ti / 1070 | GGUF | Same family controls | Later adapter; packaging TBD | Same | Windows support is later; official Windows CUDA prebuilt reportedly lacks sm_61; Vulkan reportedly works | [Issue 25909](https://github.com/ggml-org/llama.cpp/issues/25909) (reported), [build docs](https://github.com/ggml-org/llama.cpp/blob/master/docs/build.md) | Is Windows CUDA 12.x packaging viable, or is Vulkan the only practical path? |
 | Other engines (Ollama, etc.) | Various | Various | Various | Not investigated | Out of scope for MVP | n/a | Different APIs, bundling, and model stores | None yet | Revisit only with a concrete user need |
 
@@ -74,6 +83,9 @@ Legend: `cc` = compute capability; `ngl` = GPU layers; `KV` = key/value cache;
 - That PrismML improves anything on 4 GiB. Vendor and community reports exist;
   they are not local evidence.
 - That the GTX 1070 machine behaves like the laptop.
+- That a CUDA 13.x label alone proves a prebuilt cannot run on Pascal. Its actual
+  device code, bundled libraries, driver requirements, and environment decide
+  that, and the published artifacts were not inspected here.
 - That every GGUF quantization or architecture is supported by every build.
 
 ## 4. Official llama.cpp details
@@ -156,8 +168,10 @@ necessarily the resolved layer count. This is an open measurement problem.
   only when the toolkit version is less than 13. It also builds `75-virtual`,
   `80-virtual`, `86-real`, and newer architectures depending on toolkit version.
 - Therefore the official CUDA 12.8 build is expected to include PTX for compute
-  capability 6.1 and rely on driver JIT, while the CUDA 13.4 build cannot target
-  this GPU. This is a source-level conclusion; it was not executed here.
+  capability 6.1 and rely on driver JIT. A source build with the CUDA 13.4
+  toolkit cannot target this GPU. This is a source-level conclusion; no prebuilt
+  or local source build was executed here, and a CUDA 13.x-labeled prebuilt
+  requires its own artifact-level inspection.
 - A native build with `-DCMAKE_CUDA_ARCHITECTURES=61` is expected to work with
   CUDA 12.x and may avoid JIT and host/device architecture mismatches. It was not
   built because `nvcc`, `cmake`, and `ninja` are not installed, and installing

@@ -9,9 +9,9 @@ human review and acceptance**.
 `f0f9a8135715037b4dc81d4df0eb986ce90b6d69`.
 **Stage 00 status/report commit (identity-corrected):**
 `b964fad3ed8810833a8a415f06b21d0748fd2686`.
-**Repository maintenance commit:** the commit containing this snapshot; see
-`git log --oneline --decorate -4`.
-**Working tree:** clean after the maintenance commit.
+**Repository review correction commit:** the newest commit on `dev`; see
+`git log --oneline --decorate -5`.
+**Working tree:** clean after the review correction commit.
 **Upstream:** not pushed; `dev` is ahead of `origin/dev`.
 
 ## Summary
@@ -105,7 +105,7 @@ These are observations, not guarantees that the values remain unchanged.
 | Check | Result |
 | --- | --- |
 | `python3 scripts/check_docs.py` | Passed: 27 Markdown files, 104 relative links, 20 required files |
-| `bash scripts/check-commit-range.sh bdfced9 HEAD` | Passed: both identity-corrected Stage 00 commit messages accepted |
+| `bash scripts/check-commit-range.sh bdfced9 HEAD` | Passed: all three commit messages in the review range accepted |
 | Commit-message pass/fail fixtures | Valid accepted; invalid header rejected with exit 1 |
 | YAML parse of `.github/workflows/quality.yml` | Passed: jobs `documentation` and `commit-messages` |
 | `git diff --check` / cached check | Clean |
@@ -121,7 +121,9 @@ These are observations, not guarantees that the values remain unchanged.
 
 - No runnable GhostRAM artifact exists.
 - No engine build has been verified on this laptop by the project.
-- CUDA 13.x is unsuitable for Pascal; a CUDA 12.8 build or Vulkan must be used.
+- CUDA 13.x cannot build new Pascal device code; a CUDA 12.x toolchain is required
+  for a Pascal-targeted CUDA build, with Vulkan as fallback. A CUDA 13.x-labeled
+  prebuilt remains artifact-specific and unverified.
 - The CUDA runtime libraries (`libcudart`, cuBLAS) are not installed locally;
   official CUDA binaries may require a separate runtime asset or a toolkit.
 - The 4 GiB VRAM and 7.4 GiB RAM budget is tight; usable model sizes are unknown
