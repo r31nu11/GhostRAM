@@ -1,8 +1,9 @@
 # Troubleshooting
 
-**Status:** Stage 01 source-only diagnostics. `ghostram doctor` exists, but there
-is no release or installer. This page records the diagnostic command, known
-environment constraints, and the behavior that later stages must explain.
+**Status:** Stage 02 source-only diagnostics. `ghostram doctor` and
+`ghostram models scan` exist, but there is no release or installer. This page
+records the diagnostic commands, known environment constraints, and behavior that
+later stages must explain.
 
 ## 1. First check: is this a GhostRAM problem?
 
@@ -48,7 +49,47 @@ python3 -m json.tool /tmp/opencode/doctor.json > /dev/null
 The schema is documented in [DOCTOR_SCHEMA.md](DOCTOR_SCHEMA.md). A `partial` or
 `unavailable` result is an observation, not a claim that a backend is supported.
 
-## 3. Known constraints on the development laptop
+## 3. GhostRAM model scan diagnostics
+
+From a source checkout, select a directory explicitly:
+
+```sh
+cargo run -p ghostram-cli -- models scan /path/to/models
+cargo run -p ghostram-cli -- models scan /path/to/models --recursive
+cargo run -p ghostram-cli -- models scan /path/to/models --json
+cargo run -p ghostram-cli -- models scan /path/to/models --hash
+```
+
+The scanner is read-only and non-recursive by default. It does not follow
+symlinks, does not search `$HOME` or a configured directory, and does not load or
+modify model files. Without `--hash`, tensor payloads are not read.
+
+Exit code 0 means the scan completed, including `partial` and `empty` results. A
+`partial` scan is not a command failure: inspect each file record and the
+`skipped`/`issues` fields. Exit code 2 means an invalid invocation. Exit code 1
+means the root could not be scanned or output failed.
+
+| Observation | Meaning and action |
+| --- | --- |
+| `state: empty` | No candidate `.gguf` files were found at this depth. Try a different selected path or `--recursive`. This is not an error. |
+| `state: partial` | At least one candidate or traversal entry was not fully inspected. Read the per-file `parse_status` and `failure`, plus `skipped` and `issues`. |
+| `parse_status: unsupported` | Unsupported GGUF version/endianness/metadata type, or a documented catalog limit was exceeded. The file may still be valid for another reader. |
+| `parse_status: malformed` | Bad magic, duplicate names, invalid alignment/tensor descriptor, or truncation. Do not assume an engine will accept it. |
+| `parse_status: unreadable` | Permission, I/O, or non-regular-file failure. Check access to the selected tree. |
+| `parse_status: changed` | The file changed during inspection. Avoid concurrent writes and retry. Best-effort detection is not a lock or a race-free snapshot. |
+| `hash.status: failed` | Hashing was requested but the complete file could not be read. No digest is reported. |
+| `hash.status: changed` | The digest was discarded because the file changed or its read length differed. Retry after writes finish. |
+| A symlinked model is missing | Symlinks are deliberately skipped, including a symlink supplied as the root. Select the real directory. |
+| A non-UTF-8 filename is missing | Such candidate paths are skipped, counted, and make the scan `partial`; JSON display paths require UTF-8. |
+| `--hash` takes a long time | It explicitly reads every complete candidate file, including tensor bytes. It is not an incremental or cached hash. |
+
+A symlink root, missing root, non-directory root, unreadable root, or non-UTF-8
+root is a command failure, not a partial scan. A path beginning with `-` needs the
+`--` option terminator. The full field contract is in
+[MODELS_SCHEMA.md](MODELS_SCHEMA.md); limits are in
+[GGUF_CATALOG.md](GGUF_CATALOG.md).
+
+## 4. Known constraints on the development laptop
 
 These observations were made on 2026-10-20 and may change:
 
@@ -58,11 +99,11 @@ These observations were made on 2026-10-20 and may change:
 | Vulkan runs on the Intel iGPU instead of the NVIDIA GPU | Both Intel UHD 630 and NVIDIA GTX 1050 Ti expose Vulkan devices. | Explicit NVIDIA device selection is required. Do not assume the first enumerated device is discrete. |
 | The machine becomes sluggish or the OOM killer fires | 7.4 GiB RAM and 4 GiB VRAM are shared with the desktop; swap is zram. | Use conservative budgets, smaller contexts, and one engine at a time. A successful load is not proof of usability. |
 | A prebuilt CUDA binary does not start | `libcudart`, cuBLAS, or a compatible runtime may be missing. | The official CUDA archive ships runtime assets separately; a toolkit alone is not the only option. This was not tested locally. |
-| No model is listed | No GGUF model was found in the inspected directories. | GhostRAM does not download models silently. The future catalog will report absent models as absent, not as an error. |
+| No model is listed | No regular, UTF-8-named `.gguf` file was found in the selected directory, or recursion was not requested. | GhostRAM does not download models or invent a default path. An empty scan is a successful `empty` result. |
 | No engine is found | No llama.cpp, Ollama, or other engine was installed. | Engine installation is a future, explicit step. Stage 01 did not install one. |
 | `cmake`, `ninja`, or `nvcc` is missing | The development toolchain is not installed. | Building an engine locally requires explicit maintainer approval and additional packages. End users will not need a compiler for GhostRAM. |
 
-## 4. Safe diagnostics
+## 5. Safe diagnostics
 
 The following commands are read-only and exist on a typical Linux system. They
 diagnose the machine, not GhostRAM. Run only what is available; missing tools are
@@ -97,7 +138,7 @@ Do not run commands as root to "fix" a GhostRAM issue. Do not change the driver,
 governor, or clocks as a first response. Record the output and the exact engine
 build before changing anything.
 
-## 5. Interpreting common engine failures (future)
+## 6. Interpreting common engine failures (future)
 
 GhostRAM should eventually classify errors instead of dumping raw logs:
 
@@ -115,7 +156,7 @@ GhostRAM should eventually classify errors instead of dumping raw logs:
 
 These categories are design requirements, not implemented behavior.
 
-## 6. Reporting a problem
+## 7. Reporting a problem
 
 Once the project has a public issue tracker and a release, a useful report
 includes:
@@ -131,10 +172,13 @@ includes:
 Do not include API keys, tokens, private prompts, or model files. For security
 vulnerabilities, follow [SECURITY.md](../SECURITY.md), not a public issue.
 
-## 7. Current limitations
+## 8. Current limitations
 
-- There is no GhostRAM release or installer; only a source-built diagnostic
-  command exists.
+- There is no GhostRAM release or installer; only source-built diagnostic and
+  model-scan commands exist.
+- The model scan is a point-in-time observation with no cache, persistent catalog,
+  shard grouping, or engine cross-check.
+- No ecosystem parser was audited and no real GGUF model was tested by the project.
 - No persistent logs or automatic diagnostic bundle exist.
 - No telemetry is collected.
 - No inference, engine installation, or benchmark workflow exists to recover.

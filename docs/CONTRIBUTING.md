@@ -1,8 +1,9 @@
 # Contributing
 
-**Status:** Stage 01 workflow contract. The repository contains a Rust workspace
-with a read-only diagnostic CLI. The workflow below applies to Rust code, tests,
-scripts, documentation, and research.
+**Status:** Stage 02 workflow contract (pending acceptance). The repository
+contains a Rust workspace with a read-only diagnostic CLI and a bounded, read-only
+GGUF model catalog. The workflow below applies to Rust code, tests, scripts,
+documentation, and research.
 
 The project maintainer is `r31nu11` (GitHub account `r31nu11`). Branches,
 commits, and releases follow the policy below.

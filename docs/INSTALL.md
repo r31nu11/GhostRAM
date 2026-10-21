@@ -73,7 +73,7 @@ will not describe an unsigned download as "verified".
 
 | Item | State |
 | --- | --- |
-| GhostRAM source binary | Buildable with Cargo; `ghostram doctor` is implemented. |
+| GhostRAM source binary | Buildable with Cargo; `ghostram doctor` and `ghostram models scan` are implemented. |
 | Release artifact | None. |
 | Package repository | None. |
 | Supported distribution list | Not decided. |
@@ -83,16 +83,19 @@ will not describe an unsigned download as "verified".
 
 If you want to work on the source repository, see
 [CONTRIBUTING.md](CONTRIBUTING.md). That is a development workflow, not a user
-installation. A developer can build and run the read-only diagnostic command:
+installation. A developer can build and run the read-only source commands:
 
 ```sh
 cargo build --workspace --locked
 cargo run -p ghostram-cli -- doctor
 cargo run -p ghostram-cli -- doctor --json
+cargo run -p ghostram-cli -- models scan /path/to/models
 ```
 
 These commands require a Rust toolchain and compile the workspace. They do not
-install GhostRAM, create a package, install an engine, or download a model.
+install GhostRAM, create a package, install an engine, or download a model. The
+model scanner reads only an explicitly selected directory and writes no catalog
+state. See [GGUF_CATALOG.md](GGUF_CATALOG.md) for its boundaries.
 
 ## 6. Related documents
 

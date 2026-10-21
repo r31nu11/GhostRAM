@@ -8,3 +8,4 @@
 pub mod diagnostic;
 pub mod error;
 pub mod quantity;
+pub mod time;

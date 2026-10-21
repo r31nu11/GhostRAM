@@ -330,10 +330,13 @@ For the MVP, extract:
 - file size and SHA-256.
 
 Treat model files as untrusted: bounded reads, checked lengths, no panics, no
-execution. Parser candidates include `gguf` 0.1.x, `gguf-rs` 0.1.x, a minimal
-in-tree reader, and `gguf-py`'s dump tool as a development reference. No parser has
-been selected or audited; Stage 02 must test malformed input and review
-maintenance.
+execution. Parser candidates included `gguf` 0.1.x, `gguf-rs` 0.1.x, a minimal
+in-tree reader, and `gguf-py`'s dump tool as a development reference. At the time
+of this 2026-10-20 note, no parser had been selected or audited. Stage 02 later
+selected a narrow in-tree read-only reader and did not audit the external crates;
+the later scope and evidence are in the
+[GGUF catalog format research](2026-10-21-gguf-catalog-format.md). The Stage 02
+scope also superseded this note's shard grouping and mandatory-hash assumptions.
 
 ## 10. Cross-cutting findings and risks
 

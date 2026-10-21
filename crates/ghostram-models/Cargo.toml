@@ -1,0 +1,21 @@
+[package]
+name = "ghostram-models"
+description = "Read-only GGUF model discovery and catalog metadata for GhostRAM"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+
+[dependencies]
+ghostram-core.workspace = true
+serde.workspace = true
+sha2.workspace = true
+
+[target.'cfg(unix)'.dependencies]
+libc.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true

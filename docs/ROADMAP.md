@@ -20,9 +20,9 @@ criteria.
 | Stage | Title | State | Depends on |
 | --- | --- | --- | --- |
 | 00 | Technical reconnaissance and project charter | Accepted (2026-10-20) | — |
-| 01 | Minimal Rust workspace and diagnostic spine | Complete (pending acceptance) | 00 |
-| 02 | GGUF model catalog and identity | Next (blocked) | 01 |
-| 03 | Memory planner and safety budgets | Planned | 02 |
+| 01 | Minimal Rust workspace and diagnostic spine | Accepted (2026-10-21) | 00 |
+| 02 | GGUF model catalog and identity | Complete (pending acceptance) | 01 |
+| 03 | Memory planner and safety budgets | Next (blocked) | 02 |
 | 04 | Engine adapter and supervised runtime | Planned | 01, 03 |
 | 05 | Benchmark harness and reports | Planned | 03, 04 |
 | 06 | Tuner, history, and Pareto search | Planned | 05 |
@@ -43,7 +43,7 @@ authorized Stage 01.
 
 ## Stage 01 — Minimal Rust workspace and diagnostic spine
 
-**State:** Complete, pending formal acceptance.
+**State:** Accepted on 2026-10-21.
 
 **Goal:** prove the toolchain and produce a trustworthy read-only environment
 report without touching engines or models.
@@ -75,8 +75,9 @@ discovery result. No packages, engines, models, or settings were changed. Exact
 results and unverified items are in the
 [Stage 01 report](../reports/stages/stage-01-minimal-rust-workspace.md).
 
-**Gate:** the maintainer reviews the Stage 01 report and accepts the stage.
-Acceptance does not authorize a push, tag, release, or Stage 02.
+**Gate:** met. The maintainer accepted Stage 01 on 2026-10-21 and separately
+authorized Stage 02. Acceptance did not itself authorize a push, tag, release, or
+promotion to `main`.
 
 **Non-goals:** engine installation, model download, inference launch, GGUF parsing,
 memory estimates, benchmarks, GUI. Engine discovery may inspect `PATH` and run
@@ -84,27 +85,65 @@ read-only version/device probes, but must not install or launch inference.
 
 ## Stage 02 — GGUF model catalog and identity
 
-**State:** Next, blocked until Stage 01 is accepted and Stage 02 is explicitly
-authorized.
+**State:** Complete, pending formal acceptance. Stage 03 remains blocked until the
+maintainer accepts this stage.
 
-**Goal:** discover models safely and understand their metadata before launching
-anything.
+**Goal:** let a user discover GGUF files in a directory they select and catalog
+bounded, read-only metadata before any engine launch.
 
-**Scope:**
+**Delivered:**
 
-- Add a model crate/module with a bounded, read-only GGUF metadata parser.
-- Scan configured directories; handle split GGUF shards; identify sidecars.
-- Record path, size, modification time, SHA-256, architecture, parameter count,
-  context length, layer/head counts, quantization, tokenizer metadata, and
-  shard information.
-- Cache metadata with invalidation by size/mtime/hash policy.
-- Add `ghostram models list` and JSON output.
-- Test malformed and truncated files; do not parse tensor payloads unnecessarily.
-- Update status, roadmap, and Stage 02 report.
+- A fourth workspace crate, `ghostram-models`, and the existing CLI extended with
+  `ghostram models scan`.
+- A bounded in-tree GGUF v2/v3 little-endian parser for headers, all documented
+  metadata value types, nested arrays, tensor descriptors, alignment, and
+  duplicate-key/name checks. Tensor payloads are not parsed.
+- Compact extraction of general identity fields, common architecture counts,
+  tokenizer array summaries and presence flags, tensor types, alignment
+  provenance, and warnings. Token values, merges, chat templates, prompts, and
+  arbitrary blobs are never emitted.
+- Non-recursive directory scanning by default, optional `--recursive`, safe
+  symlink handling, deterministic sorting, non-UTF-8 path diagnostics, bounded
+  traversal, and per-file outcomes.
+- Optional `--hash` streaming SHA-256 with a fixed buffer, complete-read
+  requirement, and change/error detection that never reports a partial digest.
+- Versioned `ghostram.models.scan/1` JSON output, human output, help, and exit-code
+  contracts. `ghostram.doctor/1` is unchanged.
+- Deterministic synthetic and adversarial tests for malformed, truncated,
+  unsupported, resource-limit, tokenizer, tensor, scan, hash, symlink, and CLI
+  cases.
+- [GGUF catalog behavior](GGUF_CATALOG.md),
+  [model scan schema](MODELS_SCHEMA.md), dated
+  [GGUF format research](research/2026-10-21-gguf-catalog-format.md), and
+  the [Stage 02 report](../reports/stages/stage-02-gguf-model-catalog.md).
+- Updated README, changelog, policy, status, architecture, testing, engine-support,
+  contributor, and user documentation.
 
-**Acceptance:** parser survives malformed fixtures without panics; metadata for
-at least one real model is cross-checked against engine-reported metadata in a
-later stage; no model files are modified.
+**Acceptance evidence:** formatting, Clippy with warnings denied, all workspace
+tests, the locked workspace build, documentation checks, commit-range checks, and
+local identity checks passed. Exact commands, counts, and outcomes are recorded in
+the Stage 02 report. The parser and scanner were tested only with synthetic
+fixtures. No real model, engine, GPU, inference, or benchmark was used, and no
+model files were written or modified.
+
+**Gate:** the maintainer reviews the Stage 02 report and accepts the stage. The
+maintainer separately authorized publication of the Stage 02 history to
+`origin/dev`; that does not authorize a tag, GitHub Release, promotion to `main`,
+or Stage 03.
+
+**Scope reconciliation:** the earlier Stage 02 wording named configured
+directories, mandatory SHA-256, a metadata cache, `ghostram models list`, shard
+grouping, and a real-model/engine cross-check. The maintainer-authorized scope
+replaced configured directories with an explicit user-selected scan root, made
+hashing optional, and deferred the cache, list command, grouping, and real-model
+cross-check. Filename sidecar/shard hints are retained, but shards remain separate
+records. These deferred items are not hidden incomplete requirements and must not
+be claimed as delivered. A later authorized stage may add them with their own
+tests and acceptance criteria.
+
+**Non-goals:** model loading, inference, engine compatibility, shard merging,
+persistent catalog state, model downloads, network services, write access, GUI, and
+benchmarks.
 
 ## Stage 03 — Memory planner and safety budgets
 

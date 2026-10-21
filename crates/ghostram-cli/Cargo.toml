@@ -15,7 +15,9 @@ path = "src/main.rs"
 
 [dependencies]
 ghostram-core.workspace = true
+ghostram-models.workspace = true
 ghostram-probe.workspace = true
+serde.workspace = true
 serde_json.workspace = true
 
 [dev-dependencies]

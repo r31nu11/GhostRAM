@@ -1,8 +1,11 @@
 # Architecture
 
 **Status:** Stage 00 architecture accepted; ADR-0001 through ADR-0005 accepted.
-Stage 01 implements the diagnostic spine in `ghostram-core`, `ghostram-probe`,
-and `ghostram-cli`. Later components remain planned.
+Stage 01 added the diagnostic spine in `ghostram-core`, `ghostram-probe`, and
+`ghostram-cli`. Stage 02 adds `ghostram-models` and a read-only GGUF catalog
+boundary. Later components remain planned. No new ADR was required: the fourth
+crate follows the crate-split rule in ADR-0002 and does not change an accepted
+decision.
 **Related decisions:** [ADR-0002](adr/0002-modular-monolith-and-crate-split.md),
 [ADR-0003](adr/0003-engine-integration-strategy.md),
 [ADR-0004](adr/0004-measurement-provenance.md),
@@ -64,7 +67,7 @@ planner or the stored history.
 | --- | --- | --- |
 | `ghostram-core` | Domain types, units, IDs, configuration intent, errors, capability and measurement contracts, versioned serialization envelopes. | Crate |
 | `ghostram-probe` | Read-only Linux diagnostics: OS/kernel, CPU, memory, swap/zram, storage, NVIDIA GPU/driver, Vulkan devices, tools, and external engine discovery. | Crate |
-| `ghostram-models` | Local GGUF discovery, metadata parsing, identity/hash, shard grouping. | Module first; crate when parser lands |
+| `ghostram-models` | User-selected local GGUF discovery, bounded metadata parsing, filename hints, and optional content hashing. No stable model identity, shard grouping, cache, or persistence yet. | Crate (Stage 02) |
 | `ghostram-engine` | Engine adapter contract, build discovery, capability probes, argument mapping, child-process lifecycle, HTTP client. | Crate; runtime initially inside |
 | `ghostram-planner` | Memory estimates, candidate generation, safety budgets, Pareto inputs. | Module first; crate when estimates are non-trivial |
 | `ghostram-tuner` | Bounded search, experiment scheduling, evaluation against goals. | Later crate |
@@ -75,17 +78,17 @@ planner or the stored history.
 
 ### Initial crate set
 
-Stage 01 created only:
+The workspace currently contains exactly:
 
 1. `ghostram-core`
-2. `ghostram-probe`
-3. `ghostram-cli`
+2. `ghostram-models`
+3. `ghostram-probe`
+4. `ghostram-cli`
 
 `ghostram-engine` follows in Stage 04 when there is a process to supervise.
-`ghostram-models` follows in Stage 02 when a real parser exists. `planner`,
-`tuner`, `store`, and `ui` remain modules or future crates until their APIs are
-stable. This avoids ten crates with placeholder code and circular dependency
-pressure.
+`planner`, `tuner`, `store`, and `ui` remain modules or future crates until their
+APIs are stable. This avoids ten crates with placeholder code and circular
+dependency pressure.
 
 Dependency direction:
 
@@ -106,7 +109,8 @@ Rules:
 
 - `core` depends on no OS-specific crate and no engine.
 - `probe` may depend on OS APIs and `core`, never on the UI or engine.
-- `models` may depend on a parser and `core`, never on `probe`.
+- `models` may depend on `core` and narrow parsing/hash dependencies, never on
+  `probe`, an engine, or persistence.
 - `engine` may depend on `core`, process/HTTP libraries, and filesystem paths;
   it must not depend on `models` or `planner` types beyond `core` contracts.
 - `planner` is pure and deterministic where possible; it takes metadata and
@@ -116,8 +120,10 @@ Rules:
 
 ## 4. Domain model
 
-Stage 01 implements the diagnostic subset. Later stages add the model, planner,
-measurement, and runtime contracts. The following contracts are required.
+Stage 01 implements the diagnostic subset. Stage 02 implements a versioned model
+scan observation contract, not stable model identity. Later stages add the
+planner, measurement, and runtime contracts. The following contracts are
+required.
 
 ### 4.1 Units and identity
 
@@ -125,8 +131,12 @@ measurement, and runtime contracts. The following contracts are required.
   as an integer number of bytes. Future stages add `Tokens(u32)`,
   `TokensPerSecond(f64)`, `Milliseconds(u64)`, and other typed quantities as their
   APIs land. No untyped integer memory fields in public APIs.
-- `ModelId`: stable identity from content hash plus a display name; a path alone
-  is not an identity.
+- `ModelId`: planned stable identity from content hash plus a display name; a path
+  alone is not an identity. Stage 02 does not implement `ModelId`. Its
+  `ghostram.models.scan/1` records are point-in-time observations with an optional
+  SHA-256, absolute path, and filename hints. A later stage must decide when a
+  complete hash is required before treating two records as the same model. Shards
+  are not grouped or reconstructed in Stage 02.
 - `EngineBuildId`: for a single-executable artifact, the executable's SHA-256.
   Engine family, version, release tag, source commit, artifact name, target
   platform, build configuration, and dependency information are associated
@@ -216,6 +226,27 @@ loads a model, starts an inference server, benchmarks hardware, or changes syste
 settings. The CLI owns presentation, exit codes, and the rule that `--json` writes
 exactly one JSON envelope to stdout. The complete field contract is in
 [DOCTOR_SCHEMA.md](DOCTOR_SCHEMA.md).
+
+### 4.7 Model scan contract
+
+`ghostram models scan <path>` produces a `ghostram.models.scan/1` envelope
+implemented in `ghostram-models`. The user selects exactly one directory; there is
+no default path. The scanner is non-recursive by default, never follows symlinks,
+catalogs regular `.gguf` files only, and reports per-file outcomes inside a
+successful `complete`, `partial`, or `empty` scan.
+
+`ghostram-models` owns bounded header/metadata/tensor-descriptor parsing,
+classification, filename hints, traversal limits, and optional streaming SHA-256.
+It does not parse tensor payloads, emit token/merge/chat-template content, load a
+model, write the selected tree, cache results, group shards, or contact an engine.
+Without `--hash`, tensor payloads are not read. With `--hash`, complete files are
+streamed through a fixed-size buffer; a digest is emitted only after a successful
+EOF read and is discarded on observed change.
+
+Parsed metadata is an observation, not engine acceptance or stable identity. The
+CLI owns presentation and exit codes. The field contract is in
+[MODELS_SCHEMA.md](MODELS_SCHEMA.md), and parser/scan behavior and limits are in
+[GGUF_CATALOG.md](GGUF_CATALOG.md).
 
 ## 5. Required boundaries
 
@@ -344,22 +375,27 @@ Requirements:
 
 ```text
 probe ──► hardware snapshot ──┐
-                              ├─► plan ──► candidates ──► run ──► measurements
-model scan ──► metadata ──────┘                                      │
-                                                                     ▼
-                                                               run store
-                                                                     │
-                                                              JSON + Markdown
+                              ├─► plan (later) ──► candidates ──► run (later)
+model scan ──► metadata ──────┘                         │
+                                                       ▼
+                                             measurements (later)
+                                                       │
+                                                       ▼
+                                                 run store (later)
+
+Stage 02 stops at the ephemeral model-scan metadata envelope. It has no store.
 ```
 
 Engine discovery produces installation records, probing produces build identity,
 and capability observations are timestamped against a runtime context. These are
-separate from hardware and model identity and are not collapsed into a single
-fingerprint.
+separate from hardware and model observations and are not collapsed into a single
+fingerprint. Stage 02's model records contain no stable model identity; a content
+hash is optional and shards are not grouped.
 
-Persistence requirements:
+Persistence requirements (planned; not implemented in Stage 02):
 
-- Versioned JSON envelopes with a schema version.
+- Versioned JSON envelopes with a schema version. Stage 02 defines an envelope but
+  does not persist it.
 - UTC RFC 3339 timestamps.
 - Content hashes for models and engine binaries.
 - Build identity, installation records, and capability observations stored
@@ -410,7 +446,9 @@ the UI must not assume that the first Vulkan adapter is the discrete GPU.
 
 - `probe`: parsers for captured `/proc`, `/sys`, `nvidia-smi`, `vulkaninfo`, and
   version outputs; fixtures for missing/odd hardware.
-- `models`: malformed/truncated GGUF fixtures; shard grouping; bounded reads.
+- `models`: malformed/truncated GGUF fixtures; every metadata type; limit,
+  duplicate, endianness, tensor-offset, symlink, filename-hint, traversal, hash,
+  and change-detection cases. No shard grouping exists yet.
 - `planner`: property tests for monotonicity and overflow; golden estimates.
 - `engine`: fake adapter and fake HTTP server; timeout/crash/cleanup tests;
   argument-array snapshots.
@@ -425,7 +463,9 @@ the UI must not assume that the first Vulkan adapter is the discrete GPU.
    the MVP? (Proposed: both, because they answer different questions.)
 2. Should the engine adapter own process supervision permanently, or split into
    `runtime` once multiple engines exist?
-3. Which GGUF parser is safe and maintained enough for untrusted files?
+3. What additional real-model and engine cross-checks are needed before the
+   catalog's metadata is used for engine launch decisions? Stage 02 selected a
+   narrow in-tree parser only for read-only cataloging.
 4. How should `--fit`-resolved values be recovered reliably across builds?
 5. What is the minimum usable schema for history, and when does SQLite become
    justified?

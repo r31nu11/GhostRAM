@@ -1,8 +1,10 @@
 # Testing strategy
 
-**Status:** Stage 01. The Rust workspace, read-only diagnostic probes, CLI, parser
-fixtures, unit tests, integration tests, and Rust CI job exist. There is still no
-engine adapter, model parser, inference, or benchmark harness to test.
+**Status:** Stage 02 (pending acceptance). The Rust workspace, read-only diagnostic
+probes, bounded GGUF metadata parser, model scanner, CLI, parser fixtures, unit
+tests, integration tests, and Rust CI job exist. There is still no engine adapter,
+model loader, inference, or benchmark harness to test. No real GGUF model was
+available; model tests use deterministic synthetic files.
 
 ## 1. Principles
 
@@ -19,7 +21,7 @@ engine adapter, model parser, inference, or benchmark harness to test.
 6. Benchmarks are experiments, not tests. Their methodology and evidence rules
    are in [BENCHMARKING.md](BENCHMARKING.md).
 
-## 2. Current checks (Stage 01)
+## 2. Current checks (Stage 02)
 
 Run from the repository root:
 
@@ -38,14 +40,16 @@ git diff --check
 | --- | --- | --- |
 | `cargo fmt --check` | Rust source matches the workspace formatting. | Code quality or behavior. |
 | `cargo clippy ... -D warnings` | No warnings from the configured Clippy lint set. | Absence of logic bugs, security issues, or hardware compatibility. |
-| `cargo test --workspace` | Parser fixtures, report models, bounded-command behavior, CLI argument handling, and CLI integration tests pass. | That real engines, models, CUDA, or Vulkan inference work. |
+| `cargo test --workspace` | Diagnostic parser fixtures, GGUF parser/scan fixtures, report models, bounded-command behavior, CLI argument handling, and CLI integration tests pass. | That real engines, models, CUDA, or Vulkan inference work. |
 | `cargo build --workspace --locked` | The workspace builds from the committed dependency lockfile. | That a release artifact exists or that another platform builds. |
 | `check_docs.py` | Required files exist; relative Markdown links resolve; ADRs have required fields; stage reports have all 14 sections. | That prose is accurate, that external URLs are live, or that instructions work. |
 | `check-commit-message.sh` | One message follows the header/body convention and has `Changes:`, `Reason:`, and `Validation:` bullets. | That the change is correct or that validation claims are true. |
 | `check-commit-range.sh` | Commits in a range follow the convention. | That the range is the right comparison base. |
 | `git diff --check` | No whitespace errors are introduced in tracked changes. | Markdown correctness or code quality. |
 
-The observed results of these commands for Stage 01 are recorded in the
+The observed results of these commands for Stage 02 are recorded in the
+[Stage 02 report](../reports/stages/stage-02-gguf-model-catalog.md). Stage 01
+results remain in the
 [Stage 01 report](../reports/stages/stage-01-minimal-rust-workspace.md). Do not
 repeat a result here without re-running the command.
 
@@ -53,7 +57,7 @@ repeat a result here without re-running the command.
 
 ### 3.1 Unit tests
 
-Implemented in Stage 01:
+Implemented in Stages 01 and 02:
 
 - `Bytes` conversion, overflow, display, and integer JSON serialization.
 - Diagnostic-state and envelope behavior, including schema rejection.
@@ -65,26 +69,45 @@ Implemented in Stage 01:
 - Bounded-command success, non-zero exit, output truncation, process-group timeout
   cleanup, direct-child reaping, inherited-pipe descendant cleanup, and bounded
   return when a descendant deliberately escapes the process group.
-- CLI argument parsing and human rendering.
+- Synthetic GGUF v2/v3 fixtures covering all documented scalar metadata types,
+  nested arrays, boolean validation, tokenizer array summaries, tensor types, and
+  architecture ordering.
+- GGUF rejection tests for bad magic, every truncated header prefix, unsupported
+  versions/endianness/types, duplicate metadata keys and tensor names, invalid
+  alignment and dimensions, offsets outside the data region, oversized values, and
+  representative entry, key, string, array, tensor, dimension, and distinct-type
+  limit cases.
+- Scanner tests for non-recursive/recursive traversal, case-insensitive suffixes,
+  sorted output, symlink roots and entries, non-UTF-8 candidates, unreadable
+  candidates, empty directories, deterministic filename/shard hints, summary
+  consistency, change detection, and optional hash success/failure/no-partial
+  behavior.
+- Contract serialization proving token values, merge values, and chat-template
+  text are absent, plus CLI argument parsing and human rendering.
 
 Planned for later stages:
 
 - Planner formulas: RAM/VRAM estimates, KV-cache scaling, and overflow checks.
-- GGUF metadata parser: bounds checking, invalid types, and truncated headers.
+- Real-model parser cross-check with an approved model and engine.
 - Configuration resolution: intent-to-flag mapping and provenance.
 
-Unit tests use small checked-in fixtures, not live hardware. A parser test must
-include at least one malformed or truncated fixture.
+Unit tests use small fixtures, either checked-in parser captures or deterministic
+byte builders, not live hardware. A parser test must include at least one malformed
+or truncated fixture.
 
 ### 3.2 Integration tests
 
-Implemented in Stage 01:
+Implemented in Stages 01 and 02:
 
 - CLI valid JSON on stdout with no human-readable noise.
 - Valid partial JSON when `PATH` makes optional tools unavailable.
 - Exit code 2 for invalid arguments, and help/version behavior.
 - Report generation completes when optional GPUs, Vulkan devices, and engines are
   absent.
+- `models scan` help, empty-directory success, non-recursive versus recursive
+  behavior, human/JSON output, root failure exit 1, and no hash unless requested.
+- Model-scan JSON stays well formed for mixed valid/malformed directories, and a
+  hash result is absent unless the complete file was read.
 
 Planned for later stages:
 
@@ -119,6 +142,8 @@ Hardware tests are manual and recorded, not hidden in CI:
   laptop.
 - Device enumeration with both Intel and NVIDIA Vulkan adapters visible: observed
   on the primary laptop.
+- Real-model GGUF parsing or hashing: not performed; no real model was available
+  or downloaded. Stage 02 uses synthetic files in temporary directories.
 - A small-model smoke run on CPU and at least one GPU backend, only with
   maintainer approval: not performed; no engine or model is installed.
 - Cleanup after success, failure, timeout, and interrupt for a real engine: not
@@ -165,9 +190,11 @@ run GPU tests or download engines or models.
 
 The current workflow (`.github/workflows/quality.yml`) runs documentation checks,
 commit-range checks, and a Rust job with formatting, Clippy, tests, and a locked
-build. The workflow has been parsed locally but has not executed on GitHub
-Actions because no push is authorized. GPU tests will not run in hosted CI; they
-require a self-hosted machine and an explicit opt-in label.
+build. At Stage 02 authoring time the workflow had been parsed locally but had not
+executed on GitHub Actions; a later authorized publication may trigger it. CI
+results do not replace local validation recorded in the stage report. GPU tests
+will not run in hosted CI; they require a self-hosted machine and an explicit
+opt-in label.
 
 CI must not download models, install CUDA, or run benchmarks. A green CI result
 is not evidence about inference performance.

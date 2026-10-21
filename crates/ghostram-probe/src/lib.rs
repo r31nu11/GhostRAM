@@ -13,7 +13,6 @@ mod nvidia;
 mod os;
 mod report;
 mod storage;
-mod time;
 mod tools;
 mod vulkan;
 mod zram;

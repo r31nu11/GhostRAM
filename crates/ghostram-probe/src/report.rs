@@ -4,6 +4,7 @@ use ghostram_core::diagnostic::{
     CategoryReport, CategoryStates, DiagnosticEnvelope, DiagnosticReport, DiagnosticState,
     SystemInfo,
 };
+use ghostram_core::time::now_rfc3339;
 
 use crate::cpu::collect_cpu;
 use crate::engine::collect_engines;
@@ -11,7 +12,6 @@ use crate::memory::collect_memory_and_swap;
 use crate::nvidia::collect_nvidia;
 use crate::os::collect_os;
 use crate::storage::collect_storage;
-use crate::time::now_rfc3339;
 use crate::tools::collect_tools;
 use crate::vulkan::collect_vulkan;
 use crate::zram::collect_zram;

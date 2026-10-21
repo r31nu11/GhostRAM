@@ -5,15 +5,16 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 No GhostRAM version has been released or tagged. `Unreleased` now includes the
-Stage 01 source implementation and its read-only diagnostic CLI. It remains a
-development snapshot, not a release artifact or supported installation.
+accepted Stage 01 diagnostic implementation and the Stage 02 source model catalog,
+which remains pending formal acceptance. It remains a development snapshot, not a
+release artifact or supported installation.
 
 ## [Unreleased]
 
 ### Added
 
-- Rust workspace with exactly three crates: `ghostram-core`, `ghostram-probe`, and
-  `ghostram-cli`, plus a committed `Cargo.lock`.
+- Rust workspace with exactly four crates: `ghostram-core`, `ghostram-models`,
+  `ghostram-probe`, and `ghostram-cli`, plus a committed `Cargo.lock`.
 - Typed byte quantities, diagnostic states, category reports, system models, typed
   errors, and a `ghostram.doctor/1` JSON envelope in `ghostram-core`.
 - Read-only Linux probes for OS/kernel, CPU, memory, swap, zram, storage, NVIDIA
@@ -24,11 +25,25 @@ development snapshot, not a release artifact or supported installation.
   interpolation is used.
 - `ghostram doctor` human-readable output and `ghostram doctor --json` with clean
   stdout, stable schema identifiers, and meaningful exit codes.
+- `ghostram-models`, a read-only bounded GGUF v2/v3 little-endian parser that
+  extracts compact general, architecture, tokenizer-summary, tensor-type, and
+  alignment metadata without parsing tensor payloads.
+- `ghostram models scan <path>` with non-recursive default, `--recursive`,
+  `--json`, safe symlink handling, deterministic ordering, partial-scan
+  diagnostics, and versioned `ghostram.models.scan/1` output.
+- Explicit optional streaming SHA-256 with a fixed 64 KiB buffer, change
+  detection, no partial digest reporting, and no implicit full-file reads.
+- Deterministic GGUF fixtures and adversarial tests covering metadata types,
+  nested arrays, duplicate keys and tensor names, truncation, invalid alignment,
+  resource limits, tokenizer summaries, unknown tensor types, symlinks, hash
+  behavior, change detection, and CLI output.
 - Deterministic parser fixtures and tests for OS release, CPU info, meminfo, swap,
   df, nvidia-smi, Vulkan summary, llama.cpp version/device output, malformed input,
   partial reports, and CLI behavior.
 - Rust formatting, Clippy, test, and locked-build jobs in CI.
-- [Diagnostic report schema](docs/DOCTOR_SCHEMA.md) and the Stage 01 report.
+- [Diagnostic report schema](docs/DOCTOR_SCHEMA.md), [GGUF catalog behavior](docs/GGUF_CATALOG.md),
+  [model scan schema](docs/MODELS_SCHEMA.md), and dated GGUF format research.
+- Stage 01 and Stage 02 stage reports; Stage 01 acceptance is recorded.
 - Project charter, MVP definition, non-goals, success criteria, and governance.
 - Architecture proposal with crate boundaries, domain-model rules, and safety
   principles.
@@ -64,9 +79,15 @@ development snapshot, not a release artifact or supported installation.
   records and timestamped capability observations, and aligned `ARCHITECTURE.md`
   with that model.
 - Accepted Stage 00 and adopted ADR-0001 through ADR-0005 on 2026-10-20.
+- Accepted Stage 01 on 2026-10-21 and authorized Stage 02 model-catalog work.
 - Updated architecture, testing, installation, quick-start, troubleshooting,
   engine-support, status, roadmap, and contributor documentation for the Stage 01
   diagnostic implementation.
+- Reconciled the superseded Stage 02 wording: the delivered scope has no metadata
+  cache, `models list`, shard grouping, or real-model/engine cross-check.
+- Documented that the catalog parser follows the GGUF specification's
+  multiple-of-8 alignment and UTF-8 key handling rather than adopting every
+  additional restriction in the current upstream loader.
 
 ### Fixed
 
@@ -77,6 +98,14 @@ development snapshot, not a release artifact or supported installation.
 - Stage 01 parser handling avoids zero, guessed, or "supported" values for missing
   or inconclusive measurements. Missing optional tools and hardware remain
   explicit `partial` or `unavailable` results.
+- Stage 02 tokenizer extraction now treats `tokenizer.ggml.added_tokens` as
+  `array[string]`, matching upstream GGUF rather than an earlier integer-array
+  assumption.
+- Stage 02 alignment validation now rejects every present non-`uint32`
+  `general.alignment` value, including float, string, boolean, and array forms,
+  instead of falling back to the default.
+- Stage 02 chat-template and Hugging Face JSON presence flags now remain accurate
+  when those keys are present with an unexpected scalar type.
 
 ### Removed
 
@@ -86,3 +115,7 @@ development snapshot, not a release artifact or supported installation.
 
 - Added an initial security disclosure policy; no release support matrix exists
   yet.
+- Model scanning is read-only, skips symlinks, uses non-following candidate opens
+  on Unix, enforces checked resource limits, and never emits tokenizer values,
+  chat templates, prompts, or tensor bytes. The schema retains only compact
+  metadata and optional hashes.

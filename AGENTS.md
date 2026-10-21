@@ -33,19 +33,29 @@ ADR and propose a superseding ADR with reasons.
 
 - Stage 00 (technical reconnaissance and project charter) was accepted on
   2026-10-20; ADR-0001 through ADR-0005 were adopted at the same time.
-- Stage 01 (minimal Rust workspace and diagnostic spine) is implemented and
-  awaiting formal acceptance. The workspace contains exactly `ghostram-core`,
-  `ghostram-probe`, and `ghostram-cli`, plus `Cargo.toml` and `Cargo.lock`.
-- A source-buildable `ghostram` binary provides read-only `doctor` and
-  `doctor --json` commands. There is no release artifact or installer, no installed
-  inference engine, no model catalog, and no engine runtime in this repository.
-- No benchmark results exist. Never imply that a planned benchmark was executed.
+- Stage 01 (minimal Rust workspace and diagnostic spine) was accepted on
+  2026-10-21.
+- Stage 02 (GGUF model catalog) is implemented and awaiting formal acceptance. The
+  workspace contains exactly `ghostram-core`, `ghostram-models`, `ghostram-probe`,
+  and `ghostram-cli`, plus `Cargo.toml` and `Cargo.lock`.
+- A source-buildable `ghostram` binary provides read-only `doctor`,
+  `doctor --json`, `models scan`, and `models scan --json` commands. There is no
+  release artifact or installer, no installed inference engine, and no engine
+  runtime in this repository. The model catalog is a bounded v2/v3 little-endian
+  metadata parser and scanner, not a loader or inference integration.
+- Optional SHA-256 reads full files only with explicit `--hash`; without it,
+  tensor payloads are not parsed. There is no model cache, database, default path,
+  shard grouping, `models list`, or real-model/engine cross-check.
+- No real GGUF model was available or tested; all model parser evidence is from
+  deterministic synthetic and adversarial fixtures. No benchmark results exist.
+  Never imply that a planned benchmark or real-model validation was executed.
 - The primary laptop has a 4 GiB Pascal GPU and 7.4 GiB RAM. The secondary
   machine has not been accessed.
 
 Read [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md) for the volatile snapshot.
-Read the accepted [Stage 00 report](reports/stages/stage-00-technical-reconnaissance.md)
-and the [Stage 01 report](reports/stages/stage-01-minimal-rust-workspace.md) for
+Read the accepted [Stage 00 report](reports/stages/stage-00-technical-reconnaissance.md),
+the accepted [Stage 01 report](reports/stages/stage-01-minimal-rust-workspace.md),
+and the pending [Stage 02 report](reports/stages/stage-02-gguf-model-catalog.md) for
 evidence and validation.
 
 ## Hard rules
@@ -79,7 +89,8 @@ evidence and validation.
 | `README.md` | Public project overview and current status. |
 | `AGENTS.md` | Repository policy and automation rules. |
 | `Cargo.toml`, `Cargo.lock` | Rust workspace definition and locked dependency graph. |
-| `crates/ghostram-core` | Engine-independent contracts, quantities, errors, and report models. |
+| `crates/ghostram-core` | Engine-independent contracts, quantities, errors, time formatting, and report models. |
+| `crates/ghostram-models` | Bounded read-only GGUF metadata parsing, model scanning, and optional streaming SHA-256. |
 | `crates/ghostram-probe` | Read-only Linux diagnostics and bounded subprocess execution. |
 | `crates/ghostram-cli` | `ghostram` command line, human output, and JSON output. |
 | `docs/PROJECT_CHARTER.md` | Stable mission, MVP, non-goals, success criteria. |
@@ -87,6 +98,8 @@ evidence and validation.
 | `docs/ROADMAP.md` | Dependency-ordered stages; update every stage. |
 | `docs/ARCHITECTURE.md` | Components, boundaries, and data flow. |
 | `docs/DOCTOR_SCHEMA.md` | Versioned `ghostram.doctor/1` JSON contract. |
+| `docs/GGUF_CATALOG.md` | Read-only GGUF parser/scanning behavior, limits, and non-claims. |
+| `docs/MODELS_SCHEMA.md` | Versioned `ghostram.models.scan/1` JSON contract. |
 | `docs/ENGINE_SUPPORT.md` | Engine/backend compatibility matrix and confidence. |
 | `docs/BENCHMARKING.md` | Measurement and reporting methodology. |
 | `docs/TESTING.md` | Current checks and planned test strategy. |
@@ -118,7 +131,7 @@ evidence and validation.
 
 ## Validation
 
-Current Stage 01 checks:
+Current Stage 02 checks:
 
 ```sh
 cargo fmt --all -- --check
@@ -147,6 +160,10 @@ run, document why.
 - `ARCHITECTURE.md`: update when components, boundaries, or data flow change.
 - `DOCTOR_SCHEMA.md`: update when the diagnostic JSON contract changes; a breaking
   change requires a new schema identifier.
+- `MODELS_SCHEMA.md`: update when the model-scan JSON contract changes; a breaking
+  change requires a new schema identifier.
+- `GGUF_CATALOG.md`: update when parser boundaries, scan behavior, validation,
+  limits, or non-claims change.
 - `ENGINE_SUPPORT.md`: update with evidence, not assumptions; keep confidence
   labels.
 - `BENCHMARKING.md`, `TESTING.md`: update when methods or commands change.

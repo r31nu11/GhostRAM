@@ -1,11 +1,13 @@
 # Engine support and integration matrix
 
-**Research date:** 2026-10-20 (UTC).
-**Status:** Stage 00 research accepted; Stage 01 implements read-only discovery
-only. No engine combination below has been executed by GhostRAM on the primary
-laptop. "Expected" does not mean "verified", and a discovered executable does not
-mean "supported".
-**Canonical evidence:** [research notes](research/2026-10-20-engine-landscape.md).
+**Research date:** 2026-10-20 (UTC); model-format review updated 2026-10-21.
+**Status:** Stage 00 research accepted; Stage 01 accepts read-only discovery only;
+Stage 02 adds a bounded read-only GGUF catalog (pending formal acceptance). No
+engine combination below has been executed by GhostRAM on the primary laptop.
+"Expected" does not mean "verified", and a discovered executable or a cataloged
+GGUF file does not mean "supported".
+**Canonical evidence:** [engine research notes](research/2026-10-20-engine-landscape.md)
+and [GGUF format research](research/2026-10-21-gguf-catalog-format.md).
 **Decision:** [ADR-0003](adr/0003-engine-integration-strategy.md).
 
 ## 1. Confidence labels
@@ -291,34 +293,47 @@ only when a concrete model or capability need is demonstrated and tested.
 
 ## 6. Model format and inspection approach
 
-GGUF is the initial model format. It is an extensible single-file format with
-typed metadata and tensors, specified by ggml.
+GGUF is the initial model format. It is an extensible format with typed metadata
+and tensors, specified by ggml. Stage 02 supports only little-endian GGUF v2/v3
+and intentionally rejects big-endian and v1 files.
 
-For the MVP:
+Implemented in Stage 02:
 
-- Scan configured directories for `*.gguf` files.
-- Read the header and metadata; do not load tensor data unless required.
-- Extract at least: GGUF version, architecture, model name, file type/quantization,
-  parameter count if present, context length, block/layer count, attention head
-  counts, embedding length, tokenizer model, split/shard metadata, file size, and
-  SHA-256.
-- Group split shards and sidecars (mmproj, MTP draft) without assuming filename
-  parsing is authoritative.
-- Treat model files as untrusted input: bounded reads, checked lengths, no
-  panics, no execution.
-- Cross-check metadata after load against `/v1/models` and `/props`; a mismatch is
-  a diagnostic signal, not silently resolved.
+- Scan one explicitly selected directory for regular `*.gguf` files; there is no
+  configured or default path. Non-recursive default, optional `--recursive`.
+- Never follow symlinks; use non-following candidate opens on Unix. Non-UTF-8
+  candidate paths and unreadable entries are reported as partial diagnostics.
+- Read bounded headers, metadata, and tensor descriptors without loading or
+  parsing tensor payloads. Optional `--hash` streams the complete file through
+  SHA-256; without it, tensor bytes are not read.
+- Extract GGUF version, architecture, model name, recognized file-type label and
+  quantization hint, explicit parameter count if present, context length and common
+  block/attention/embedding fields, tokenizer model and array summaries, tensor
+  types, alignment, file size, modification time, and optional SHA-256.
+- Emit no token vocabulary, scores, merge pairs, added-token values, chat-template
+  text, Hugging Face tokenizer JSON, prompts, or tensor data.
+- Treat model files as untrusted input with checked lengths, explicit limits,
+  typed errors, no panics on malformed fixtures, and no writes.
+- Provide conservative filename hints for `mmproj`, `mtp`, LoRA, vocabulary, and
+  split-shard suffixes. Hints never assert identity.
 
-Parser options to evaluate in Stage 02:
+Not implemented or verified:
 
-- `gguf` 0.1.x (small utility parser on crates.io),
-- `gguf-rs` 0.1.x,
-- a minimal in-tree metadata reader,
-- `gguf-py` `gguf_dump.py` only as a development reference, not a runtime
-  dependency.
+- shard grouping or reconstruction; each shard and sidecar is a separate record;
+- a cache, database, `models list`, or watch mode;
+- real-model parsing or hashing (no real model was available);
+- model loading, engine compatibility, or inference;
+- post-load metadata cross-check against `/v1/models` and `/props`.
 
-No parser has been selected or audited yet. The choice needs malformed-input
-tests and a maintenance review.
+The last item remains required before engine-launch decisions rely on catalog
+metadata. A mismatch must remain a diagnostic signal, not be silently resolved.
+
+Parser choice: Stage 02 selected a minimal in-tree metadata reader rather than an
+external parser. The reader is narrow, bounded, and auditable for this catalog
+subset. Crates such as `gguf` and `gguf-rs` were not audited, and `gguf-py`
+`gguf_dump.py` remains a development reference only. The selected parser is not a
+general-purpose loader or a full GGUF validator; see
+[GGUF_CATALOG.md](GGUF_CATALOG.md).
 
 ## 7. Measurement approach by engine
 
@@ -349,7 +364,9 @@ tests and a maintenance review.
 5. Which model sizes and context lengths remain usable under the RAM/VRAM budget?
 6. Does PrismML's fork provide a measurable benefit on this laptop, and do its
    Pascal PQ2_0 and speculative paths work outside the vendor's tested hardware?
-7. Which GGUF parser is safe, maintained, and accurate enough for metadata?
+7. What real-model and engine cross-checks are needed before the Stage 02 catalog
+   is trusted for launch decisions? The narrow parser choice is made; external
+   parser audits and real-model validation remain open.
 8. How should `--fit`-resolved values be captured for reproducible comparisons?
 9. What defines "usable" rather than merely "successfully loaded" for this
    project's users?
@@ -358,8 +375,9 @@ tests and a maintenance review.
 
 ## 9. Sources
 
-All accessed 2026-10-20. See the research notes for per-claim confidence and
-additional links.
+Engine sources were accessed 2026-10-20. GGUF format sources were rechecked
+2026-10-21; see the dated research notes for per-claim confidence and additional
+links.
 
 - llama.cpp repository and README: <https://github.com/ggml-org/llama.cpp>
 - llama.cpp build guide: <https://github.com/ggml-org/llama.cpp/blob/master/docs/build.md>
@@ -371,6 +389,10 @@ additional links.
 - llama.cpp nightly b11756: <https://github.com/ggml-org/llama.cpp/releases/tag/b11756>
 - llama.cpp v0.7.0 tag: <https://github.com/ggml-org/llama.cpp/releases/tag/v0.7.0>
 - GGUF specification: <https://github.com/ggml-org/ggml/blob/master/docs/gguf.md>
+- GGUF header: <https://github.com/ggml-org/llama.cpp/blob/master/ggml/include/gguf.h>
+- GGUF loader/writer: <https://github.com/ggml-org/llama.cpp/blob/master/ggml/src/gguf.cpp>
+- GGML tensor types: <https://github.com/ggml-org/llama.cpp/blob/master/ggml/include/ggml.h>
+- GGUF Python constants: <https://github.com/ggml-org/llama.cpp/blob/master/gguf-py/gguf/constants.py>
 - NVIDIA CUDA 13.0 release notes: <https://docs.nvidia.com/cuda/archive/13.0.0/cuda-toolkit-release-notes/index.html>
 - NVIDIA CUDA 12.8 release notes: <https://docs.nvidia.com/cuda/archive/12.8.0/cuda-toolkit-release-notes/index.html>
 - NVIDIA CUDA GPU compute capability table: <https://developer.nvidia.com/cuda-gpus>
