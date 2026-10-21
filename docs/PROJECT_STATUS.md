@@ -5,9 +5,10 @@
 **Stage state:** Implementation and documentation complete; **pending formal
 acceptance**.
 **Branch:** `dev`.
-**Commit state:** the Stage 02 content commit introduces the implementation and
-this status; the follow-up report/status commit records its exact hash and is the
-Stage 02 HEAD. Use `git log -1` for the HEAD hash. Both commits use the local
+**Commit state:** Stage 02 content commit
+`244809bf12fda854f22d018c36cab5bd1d253b40`
+(`feat(stage-02): add bounded GGUF model catalog`). The final report/status commit
+is the Stage 02 HEAD; use `git log -1` for its exact hash. Both commits use the local
 maintainer identity `r31nu11 <r31nu11@mail.ru>`.
 **Publication:** the maintainer explicitly authorized publication of the Stage
 00/01/02 development history to `origin/dev`. This is not authorization for a tag,
@@ -101,7 +102,7 @@ Stage 02.
 | `cargo test --workspace --locked` | 147 passed, 0 failed (12 CLI unit, 15 CLI integration, 16 core, 63 models, 41 probe) |
 | `cargo build --workspace --locked` | Passed |
 | `python3 scripts/check_docs.py` | Passed: 33 Markdown files, 163 relative links, 28 required files |
-| `bash scripts/check-commit-range.sh bdfced9d7db49a1e2bdad5dd1602822734da33b1 HEAD` | Run over the completed history; result recorded in the report/status commit |
+| `bash scripts/check-commit-range.sh bdfced9d7db49a1e2bdad5dd1602822734da33b1 HEAD` | Passed over `bdfced9..244809b`; rerun over the completed history in the final hand-off |
 | Local author identity | `r31nu11` / `r31nu11@mail.ru` |
 | Complete diff inspection | Passed before staging |
 

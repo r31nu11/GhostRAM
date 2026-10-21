@@ -4,8 +4,8 @@
 **Maintainer:** `r31nu11` (project maintainer)
 **Branch:** `dev`
 **Status:** Complete, pending formal acceptance
-**Content commit:** the Stage 02 content commit that introduces this report; the
-follow-up report/status commit records its exact hash.
+**Content commit:** `244809bf12fda854f22d018c36cab5bd1d253b40`
+(`feat(stage-02): add bounded GGUF model catalog`).
 
 ## 1. Stage identifier and title
 
@@ -217,9 +217,22 @@ $ python3 scripts/check_docs.py
 ok: 33 Markdown files, 163 relative links, 28 required files
 
 $ bash scripts/check-commit-range.sh bdfced9d7db49a1e2bdad5dd1602822734da33b1 HEAD
-(the range check is run over the completed Stage 02 history; the follow-up
-report/status commit records the observed result)
+# Output is abridged to the Stage 01/02 tail; all earlier commits in the range
+# were also accepted.
+check: ed96c19ea3a8 feat(stage-01): add diagnostic workspace and doctor command
+ok: commit message accepted
+check: 02ad8bb8a836 docs(stage-01): record validation and content commit
+ok: commit message accepted
+check: 887fba442b48 fix(probe): bound timeout cleanup to isolated process groups
+ok: commit message accepted
+check: 244809bf12fd feat(stage-02): add bounded GGUF model catalog
+ok: commit message accepted
+ok: all checked commit messages passed
 ```
+
+The range command above was observed with the Stage 02 content commit as `HEAD`.
+It is rerun over the completed history after the report/status commit during the
+final hand-off; that final result is recorded outside this self-referential commit.
 
 Additional final checks:
 
@@ -316,10 +329,11 @@ a proof of absence for arbitrary inputs.
 
 Branch: `dev`.
 
-The Stage 02 content commit is the commit that introduces this report and the
-implementation. Its exact hash is recorded by the follow-up report/status commit,
-which is the current HEAD when this report is read in a clean tree; that HEAD hash
-is visible with `git log -1` (this report cannot embed the hash of the commit that
+The Stage 02 content commit is
+`244809bf12fda854f22d018c36cab5bd1d253b40`
+(`feat(stage-02): add bounded GGUF model catalog`). The final report/status commit
+is the current HEAD when this report is read in a clean tree; that HEAD hash is
+visible with `git log -1` (this report cannot embed the hash of the commit that
 contains this sentence). Both are ordinary non-merge commits authored as
 `r31nu11 <r31nu11@mail.ru>`. No history was rebased, amended after publication, or
 force-pushed.
