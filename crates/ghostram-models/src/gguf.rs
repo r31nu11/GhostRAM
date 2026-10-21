@@ -8,8 +8,9 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use std::io::{BufReader, ErrorKind, Read, Seek, SeekFrom};
 
 use crate::catalog::{
-    ArchitectureFields, ArrayInfo, CatalogWarning, Field, FileType, GeneralMetadata, MetadataState,
-    MetadataValueType, ModelMetadata, TensorTypeCount, TokenizerMetadata, WarningCode,
+    ArchitectureFields, ArchitectureKey, ArrayInfo, AttentionLayoutKey, CatalogWarning, Field,
+    FileType, GeneralMetadata, MetadataState, MetadataValueType, ModelMetadata, TensorTypeCount,
+    TokenizerMetadata, WarningCode,
 };
 use crate::error::{GgufError, GgufErrorKind};
 use ghostram_core::quantity::Bytes;
@@ -236,6 +237,7 @@ impl<R: Read + Seek> Decoder<'_, R> {
         let mut keys = HashSet::new();
         let mut total_key_bytes = 0_u64;
         let mut numeric_values = HashMap::new();
+        let mut architecture_markers = HashMap::new();
         let mut general = GeneralMetadata::default();
         let mut tokenizer = TokenizerMetadata::default();
         let mut warnings = Vec::new();
@@ -268,6 +270,9 @@ impl<R: Read + Seek> Decoder<'_, R> {
                     format!("duplicate metadata key {}", quoted_key(&key)),
                     Some(key_offset),
                 ));
+            }
+            if let Some(marker) = classify_architecture_marker(&key) {
+                architecture_markers.insert(key.clone(), marker);
             }
 
             let type_offset = self.offset;
@@ -469,7 +474,8 @@ impl<R: Read + Seek> Decoder<'_, R> {
             MetadataState::Incomplete
         };
         apply_general_numeric_fields(&mut general, &numeric_values, &mut warnings);
-        let architecture_fields = extract_architecture_fields(&general, &numeric_values);
+        let architecture_fields =
+            extract_architecture_fields(&general, &numeric_values, &architecture_markers);
         general.quantization = quantization_hint(&general.file_type, &tensor_types);
         for tensor_type in &tensor_types {
             if tensor_type.name.is_none() {
@@ -1132,9 +1138,16 @@ fn apply_general_numeric_fields(
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+enum ArchitectureMarker {
+    Field(ArchitectureKey),
+    Layout(AttentionLayoutKey),
+}
+
 fn extract_architecture_fields(
     general: &GeneralMetadata,
     numeric_values: &HashMap<String, NumericValue>,
+    architecture_markers: &HashMap<String, ArchitectureMarker>,
 ) -> ArchitectureFields {
     let Some(architecture) = general
         .architecture
@@ -1148,6 +1161,23 @@ fn extract_architecture_fields(
             .get(&format!("{architecture}.{suffix}"))
             .map(|value| Field::explicit(value.value))
     };
+    let prefix = format!("{architecture}.");
+    let mut present_keys = Vec::new();
+    let mut attention_layout_keys = Vec::new();
+    for (key, marker) in architecture_markers {
+        if !key.starts_with(&prefix) {
+            continue;
+        }
+        match marker {
+            ArchitectureMarker::Field(field) => present_keys.push(*field),
+            ArchitectureMarker::Layout(layout) => attention_layout_keys.push(*layout),
+        }
+    }
+    present_keys.sort_unstable();
+    present_keys.dedup();
+    attention_layout_keys.sort_unstable();
+    attention_layout_keys.dedup();
+
     ArchitectureFields {
         context_length: get("context_length"),
         embedding_length: get("embedding_length"),
@@ -1160,6 +1190,8 @@ fn extract_architecture_fields(
         expert_count: get("expert_count"),
         expert_used_count: get("expert_used_count"),
         rope_dimension_count: get("rope.dimension_count"),
+        present_keys,
+        attention_layout_keys,
     }
 }
 
@@ -1293,6 +1325,61 @@ fn expected_array_element_type(key: ArrayKey) -> Option<MetadataValueType> {
     }
 }
 
+const ARCHITECTURE_FIELD_SUFFIXES: [(&str, ArchitectureKey); 11] = [
+    ("context_length", ArchitectureKey::ContextLength),
+    ("embedding_length", ArchitectureKey::EmbeddingLength),
+    ("block_count", ArchitectureKey::BlockCount),
+    ("feed_forward_length", ArchitectureKey::FeedForwardLength),
+    ("attention.head_count", ArchitectureKey::AttentionHeadCount),
+    (
+        "attention.head_count_kv",
+        ArchitectureKey::AttentionHeadCountKv,
+    ),
+    ("attention.key_length", ArchitectureKey::AttentionKeyLength),
+    (
+        "attention.value_length",
+        ArchitectureKey::AttentionValueLength,
+    ),
+    ("expert_count", ArchitectureKey::ExpertCount),
+    ("expert_used_count", ArchitectureKey::ExpertUsedCount),
+    ("rope.dimension_count", ArchitectureKey::RopeDimensionCount),
+];
+
+const ATTENTION_LAYOUT_SUFFIXES: [(&str, AttentionLayoutKey); 4] = [
+    (
+        "attention.sliding_window",
+        AttentionLayoutKey::SlidingWindow,
+    ),
+    (
+        "attention.sliding_window_pattern",
+        AttentionLayoutKey::SlidingWindowPattern,
+    ),
+    ("attention.key_length_swa", AttentionLayoutKey::KeyLengthSwa),
+    (
+        "attention.value_length_swa",
+        AttentionLayoutKey::ValueLengthSwa,
+    ),
+];
+
+fn classify_architecture_marker(key: &str) -> Option<ArchitectureMarker> {
+    if let Some(field) = architecture_field_key(key) {
+        return Some(ArchitectureMarker::Field(field));
+    }
+    attention_layout_key(key).map(ArchitectureMarker::Layout)
+}
+
+fn architecture_field_key(key: &str) -> Option<ArchitectureKey> {
+    ARCHITECTURE_FIELD_SUFFIXES
+        .iter()
+        .find_map(|(suffix, field)| has_dotted_suffix(key, suffix).then_some(*field))
+}
+
+fn attention_layout_key(key: &str) -> Option<AttentionLayoutKey> {
+    ATTENTION_LAYOUT_SUFFIXES
+        .iter()
+        .find_map(|(suffix, layout)| has_dotted_suffix(key, suffix).then_some(*layout))
+}
+
 fn is_numeric_key(key: &str) -> bool {
     const EXACT: [&str; 4] = [
         "general.quantization_version",
@@ -1300,20 +1387,7 @@ fn is_numeric_key(key: &str) -> bool {
         "general.parameter_count",
         "general.alignment",
     ];
-    const SUFFIXES: [&str; 11] = [
-        "context_length",
-        "embedding_length",
-        "block_count",
-        "feed_forward_length",
-        "attention.head_count",
-        "attention.head_count_kv",
-        "attention.key_length",
-        "attention.value_length",
-        "expert_count",
-        "expert_used_count",
-        "rope.dimension_count",
-    ];
-    EXACT.contains(&key) || SUFFIXES.iter().any(|suffix| has_dotted_suffix(key, suffix))
+    EXACT.contains(&key) || architecture_field_key(key).is_some()
 }
 
 fn has_dotted_suffix(key: &str, suffix: &str) -> bool {
@@ -1418,7 +1492,8 @@ mod tests {
         parse_gguf_with_limits,
     };
     use crate::catalog::{
-        MetadataState, MetadataValueType, ModelMetadata, ParseStatus, Provenance, WarningCode,
+        ArchitectureKey, AttentionLayoutKey, MetadataState, MetadataValueType, ModelMetadata,
+        ParseStatus, Provenance, WarningCode,
     };
     use crate::error::{GgufError, GgufErrorKind};
     use crate::test_support::GgufBuilder;
@@ -1943,6 +2018,47 @@ mod tests {
             4096
         );
         assert_eq!(metadata.architecture_fields.block_count.unwrap().value, 24);
+    }
+
+    #[test]
+    fn tracks_present_architecture_and_layout_keys_without_serializing_them() {
+        let mut builder = GgufBuilder::new(3);
+        builder.string("general.architecture", "llama");
+        builder.u64("llama.block_count", 32);
+        builder.array(
+            "llama.attention.head_count_kv",
+            4,
+            2,
+            &[8_u32.to_le_bytes(), 8_u32.to_le_bytes()].concat(),
+        );
+        builder.u64("llama.attention.sliding_window", 4096);
+        builder.u64("llama.attention.key_length_swa", 64);
+        builder.u64("other.attention.head_count", 12);
+        builder.u64("other.attention.sliding_window", 1024);
+
+        let metadata = parse(&builder.finish(32)).unwrap();
+        let fields = &metadata.architecture_fields;
+        assert_eq!(fields.block_count.as_ref().unwrap().value, 32);
+        assert!(fields.attention_head_count_kv.is_none());
+        assert_eq!(
+            fields.present_keys,
+            vec![
+                ArchitectureKey::BlockCount,
+                ArchitectureKey::AttentionHeadCountKv,
+            ]
+        );
+        assert_eq!(
+            fields.attention_layout_keys,
+            vec![
+                AttentionLayoutKey::SlidingWindow,
+                AttentionLayoutKey::KeyLengthSwa,
+            ]
+        );
+
+        let json = serde_json::to_string(&metadata).unwrap();
+        assert!(!json.contains("present_keys"));
+        assert!(!json.contains("attention_layout_keys"));
+        assert!(!json.contains("key_length_swa"));
     }
 
     #[test]

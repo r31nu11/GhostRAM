@@ -3,14 +3,14 @@
 **Date:** 2026-10-20
 **Maintainer:** `r31nu11` (project maintainer)
 **Branch:** `dev`
-**Status:** Complete, pending acceptance
+**Status:** Accepted on 2026-10-21 (implementation complete and evidence retained)
 
 ## 1. Stage identifier and title
 
 Stage 01 — Minimal Rust workspace and diagnostic spine. This report covers the
 implementation, tests, documentation, and local validation for that stage. The
-stage is **not accepted** until the maintainer reviews this report and records a
-decision.
+maintainer accepted Stage 01 on 2026-10-21; the original pre-acceptance wording is
+retained only where it describes the authoring-time state.
 
 ## 2. Objectives and acceptance criteria
 
@@ -58,7 +58,8 @@ Completed:
 
 Incomplete or deferred:
 
-- The maintainer has not accepted Stage 01.
+- Acceptance was still pending at authoring time; the maintainer accepted Stage 01
+  on 2026-10-21.
 - No release artifact, installer, or package exists.
 - No real llama.cpp engine, engine build hash, or model was present, so engine
   execution and inference are unverified.
@@ -132,7 +133,7 @@ Changed:
 | `CHANGELOG.md` | Records the Stage 01 implementation under `Unreleased`, not a release. |
 | `README.md` | Adds source-development commands, current diagnostic state, and release caveats. |
 | `docs/PROJECT_STATUS.md` | Replaces the Stage 00 snapshot with Stage 01 implementation state and validation. |
-| `docs/ROADMAP.md` | Marks Stage 00 accepted and Stage 01 complete pending acceptance; Stage 02 is next but blocked. |
+| `docs/ROADMAP.md` | At authoring time, marked Stage 00 accepted and Stage 01 complete pending acceptance; Stage 02 was then next but blocked. Stage 01 was accepted on 2026-10-21. |
 | `docs/ARCHITECTURE.md` | Describes the implemented diagnostic path and corrects engine identity and unit scope. |
 | `docs/ENGINE_SUPPORT.md` | Adds Stage 01 discovery behavior and clarifies that discovery is not support. |
 | `docs/TESTING.md` | Records current Rust checks, test layers, hardware tests, and CI. |

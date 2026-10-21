@@ -136,5 +136,5 @@ another GPU is not automatically supported here.
 | GitHub release | None. |
 | Artifact | None. |
 | Checksums | None. |
-| Changelog release section | None; only `Unreleased` entries for Stage 00, the accepted Stage 01 diagnostic implementation, and the Stage 02 model catalog pending acceptance. |
-| Publication approval | The maintainer authorized publication of the Stage 00/01/02 development history to `origin/dev`. This is not approval for a tag, GitHub Release, `main` promotion, or artifact. No version or artifact exists. |
+| Changelog release section | None; only `Unreleased` entries for Stage 00, the accepted Stage 01 diagnostic implementation, the accepted Stage 02 model catalog, and the Stage 03 memory planner pending acceptance. |
+| Publication approval | The maintainer authorized publication of the Stage 00/01/02/03 development history to `origin/dev`. This is not approval for a tag, GitHub Release, `main` promotion, or artifact. No version or artifact exists. |

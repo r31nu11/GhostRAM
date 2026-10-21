@@ -16,11 +16,12 @@ mod scan;
 mod test_support;
 
 pub use catalog::{
-    ArchitectureFields, ArrayInfo, CatalogWarning, Failure, FailureKind, Field, FileCatalogEntry,
-    FileType, FilenameHints, FilenameRole, GeneralMetadata, HashAlgorithm, HashReport, HashStatus,
-    MODELS_SCAN_SCHEMA_VERSION, MetadataState, MetadataValueType, ModelMetadata, ModelsScan,
-    ModelsScanEnvelope, ParseStatus, Provenance, ScanIssue, ScanIssueKind, ScanOptions, ScanState,
-    ScanSummary, ShardHint, SkippedSummary, TensorTypeCount, TokenizerMetadata, WarningCode,
+    ArchitectureFields, ArchitectureKey, ArrayInfo, AttentionLayoutKey, CatalogWarning, Failure,
+    FailureKind, Field, FileCatalogEntry, FileType, FilenameHints, FilenameRole, GeneralMetadata,
+    HashAlgorithm, HashReport, HashStatus, MODELS_SCAN_SCHEMA_VERSION, MetadataState,
+    MetadataValueType, ModelMetadata, ModelsScan, ModelsScanEnvelope, ParseStatus, Provenance,
+    ScanIssue, ScanIssueKind, ScanOptions, ScanState, ScanSummary, ShardHint, SkippedSummary,
+    TensorTypeCount, TokenizerMetadata, WarningCode,
 };
 pub use error::{GgufError, GgufErrorKind, ScanError};
 pub use filename::hints_from_filename;
@@ -32,4 +33,5 @@ pub use gguf::{
     MAX_TOTAL_TENSOR_NAME_BYTES, SUPPORTED_GGUF_VERSIONS, parse_gguf,
 };
 pub use hash::HASH_BUFFER_BYTES;
+pub use scan::inspect_file;
 pub use scan::{MAX_SCAN_DEPTH, MAX_SCAN_ENTRIES, MAX_SCAN_ISSUES, scan_directory};

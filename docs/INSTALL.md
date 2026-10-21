@@ -73,7 +73,7 @@ will not describe an unsigned download as "verified".
 
 | Item | State |
 | --- | --- |
-| GhostRAM source binary | Buildable with Cargo; `ghostram doctor` and `ghostram models scan` are implemented. |
+| GhostRAM source binary | Buildable with Cargo; `ghostram doctor`, `ghostram models scan`, and `ghostram models plan` are implemented. |
 | Release artifact | None. |
 | Package repository | None. |
 | Supported distribution list | Not decided. |
@@ -90,12 +90,16 @@ cargo build --workspace --locked
 cargo run -p ghostram-cli -- doctor
 cargo run -p ghostram-cli -- doctor --json
 cargo run -p ghostram-cli -- models scan /path/to/models
+cargo run -p ghostram-cli -- models plan /path/to/model.gguf
 ```
 
 These commands require a Rust toolchain and compile the workspace. They do not
 install GhostRAM, create a package, install an engine, or download a model. The
 model scanner reads only an explicitly selected directory and writes no catalog
-state. See [GGUF_CATALOG.md](GGUF_CATALOG.md) for its boundaries.
+state. The planner reads one explicitly selected file and the current host/NVIDIA
+memory observations; it writes no plan state and does not launch an engine. See
+[GGUF_CATALOG.md](GGUF_CATALOG.md) and [MEMORY_PLANNER.md](MEMORY_PLANNER.md) for
+their boundaries.
 
 ## 6. Related documents
 

@@ -2,9 +2,9 @@
 
 **Status: not applicable yet.** GhostRAM has no installer, package, installed
 binary, or release; only a source-built development binary exists. Nothing in this
-document can be executed today. The source `doctor` and `models scan` commands
-create no application-owned state to remove, and scanning never writes to model
-directories.
+document can be executed today. The source `doctor`, `models scan`, and
+`models plan` commands create no application-owned state to remove; scanning never
+writes to model directories, and planning persists no plan.
 
 This page defines the future uninstall contract so that installation does not
 create hidden, undeletable state.

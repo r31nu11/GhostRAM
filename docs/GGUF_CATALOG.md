@@ -1,14 +1,14 @@
 # GGUF catalog behavior
 
-**Status:** Implemented in Stage 02; source-only and pending formal acceptance.
+**Status:** Implemented in Stage 02 and accepted on 2026-10-21; source-only.
 There is no release artifact or installer.
 **Implementation:** `crates/ghostram-models`.
 **JSON contract:** [MODELS_SCHEMA.md](MODELS_SCHEMA.md).
 **Format evidence:** [GGUF format research, 2026-10-21](research/2026-10-21-gguf-catalog-format.md).
 
 The model catalog is a read-only inspection path for untrusted GGUF files. It
-extracts compact descriptor and metadata summaries so a later planner can reason
-about a locally selected model. It is not a loader, validator of inference
+extracts compact descriptor and metadata summaries so the Stage 03 planner can
+reason about a locally selected model. It is not a loader, validator of inference
 behavior, model downloader, cache, database, or engine integration.
 
 ## 1. Scope and non-goals
@@ -217,7 +217,33 @@ Filename hints recognize `mmproj-`, `mtp-`, `-lora`, and `-vocab` naming and a
 `NNNNN-of-MMMMM` shard suffix. They are informational only. Shards remain separate
 records and are never merged.
 
-## 7. Optional SHA-256
+## 7. Planner handoff
+
+Stage 03 adds two read-only handoff pieces without changing the
+`ghostram.models.scan/1` JSON contract:
+
+- `inspect_file` resolves and inspects one explicitly selected regular GGUF file
+  without hashing it. It uses the same bounded parser and symlink policy as a scan.
+  A missing, symlink, non-regular, or non-UTF-8 path is an error; a readable
+  malformed or unsupported file remains a file entry with a parse status.
+- The parser records recognized architecture-field and attention-layout marker
+  presence in non-serialized internal fields. `ghostram models scan --json` output
+  is unchanged. The planner consumes these markers through the compact model input.
+
+The planner's recognized KV dimensions are `block_count`, `embedding_length`,
+`attention.head_count`, `attention.head_count_kv`, `attention.key_length`, and
+`attention.value_length`, using the selected architecture prefix. Recognized
+special-layout keys are `attention.sliding_window`,
+`attention.sliding_window_pattern`, `attention.key_length_swa`, and
+`attention.value_length_swa`. Marker presence makes the planner's uniform KV
+result unavailable, conservatively even if the value appears disabled.
+
+The catalog does not decide that a model is compatible with an engine. It supplies
+observations and typed unavailability to the planner. The planner's weight proxy
+uses only file size; the catalog does not expose tensor payload lengths or perform
+tensor allocation accounting.
+
+## 8. Optional SHA-256
 
 SHA-256 is never computed implicitly. `--hash` streams each readable candidate
 from start to EOF through SHA-256 with a fixed 64 KiB buffer. This reads the full
@@ -236,7 +262,7 @@ The hash covers malformed and unsupported candidates too, because hashing is an
 independent byte-level observation. Hashing a very large file takes proportionally
 longer; no performance or throughput claim is made.
 
-## 8. Command examples
+## 9. Command examples
 
 From a source checkout:
 
@@ -251,13 +277,17 @@ The command is source-development functionality, not an installed release. The
 selected path is the only path inspected. Use `--` before a path that begins with
 a hyphen.
 
+`ghostram models plan <file>` uses `inspect_file` for one explicit file; it does
+not rescan the parent directory or hash the file. Planner behavior is documented in
+[MEMORY_PLANNER.md](MEMORY_PLANNER.md).
+
 Exit codes:
 
 - `0`: scan completed, including `partial` and `empty`;
 - `1`: scan setup, root, serialization, or stdout failure;
 - `2`: invalid command invocation.
 
-## 9. Privacy and safety
+## 10. Privacy and safety
 
 The catalog reads local files and emits absolute paths, sizes, modification times,
 and optional hashes. Those fields can reveal directory layout. It does not emit
@@ -270,7 +300,7 @@ not require root and does not alter permissions, drivers, clocks, or system
 settings. The optional hash consumes read bandwidth and CPU proportional to file
 size; there is no hardware benchmark or inference.
 
-## 10. Known limitations and non-claims
+## 11. Known limitations and non-claims
 
 - No real GGUF model was available in the development environment, so the parser
   and scanner were validated with deterministic synthetic and malformed fixtures,
@@ -292,6 +322,9 @@ size; there is no hardware benchmark or inference.
   are cataloged; a pathological filesystem can still block a read or seek.
 - No result is a claim that an inference engine supports an architecture,
   quantization, tokenizer, or context length.
+- The planner consumes compact metadata, but the catalog does not validate tensor
+  allocation. Its file-size weight proxy and uniform KV formula are not engine
+  measurements.
 
 Upstream format sources and the reasoning behind these boundaries are recorded in
 [the GGUF research note](research/2026-10-21-gguf-catalog-format.md). The JSON field

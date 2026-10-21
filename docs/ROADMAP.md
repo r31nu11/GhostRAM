@@ -21,9 +21,9 @@ criteria.
 | --- | --- | --- | --- |
 | 00 | Technical reconnaissance and project charter | Accepted (2026-10-20) | — |
 | 01 | Minimal Rust workspace and diagnostic spine | Accepted (2026-10-21) | 00 |
-| 02 | GGUF model catalog and identity | Complete (pending acceptance) | 01 |
-| 03 | Memory planner and safety budgets | Next (blocked) | 02 |
-| 04 | Engine adapter and supervised runtime | Planned | 01, 03 |
+| 02 | GGUF model catalog and identity | Accepted (2026-10-21) | 01 |
+| 03 | Memory planner and safety budgets | Complete (pending acceptance) | 02 |
+| 04 | Engine adapter and supervised runtime | Next (blocked) | 01, 03 |
 | 05 | Benchmark harness and reports | Planned | 03, 04 |
 | 06 | Tuner, history, and Pareto search | Planned | 05 |
 | 07 | Iced desktop MVP | Planned | 05 |
@@ -85,8 +85,7 @@ read-only version/device probes, but must not install or launch inference.
 
 ## Stage 02 — GGUF model catalog and identity
 
-**State:** Complete, pending formal acceptance. Stage 03 remains blocked until the
-maintainer accepts this stage.
+**State:** Accepted on 2026-10-21.
 
 **Goal:** let a user discover GGUF files in a directory they select and catalog
 bounded, read-only metadata before any engine launch.
@@ -126,10 +125,9 @@ the Stage 02 report. The parser and scanner were tested only with synthetic
 fixtures. No real model, engine, GPU, inference, or benchmark was used, and no
 model files were written or modified.
 
-**Gate:** the maintainer reviews the Stage 02 report and accepts the stage. The
-maintainer separately authorized publication of the Stage 02 history to
-`origin/dev`; that does not authorize a tag, GitHub Release, promotion to `main`,
-or Stage 03.
+**Gate:** met. The maintainer accepted Stage 02 on 2026-10-21 and separately
+authorized Stage 03. Publication of the Stage 02 history to `origin/dev` did not
+authorize a tag, GitHub Release, or promotion to `main`.
 
 **Scope reconciliation:** the earlier Stage 02 wording named configured
 directories, mandatory SHA-256, a metadata cache, `ghostram models list`, shard
@@ -147,27 +145,112 @@ benchmarks.
 
 ## Stage 03 — Memory planner and safety budgets
 
-**Goal:** generate candidate configurations with explicit budgets and uncertainty.
+**State:** Complete (pending formal acceptance). Stage 04 remains blocked until the
+maintainer accepts this stage.
 
-**Scope:**
+**Goal:** produce a deterministic, evidence-labelled, read-only memory plan for one
+explicitly selected GGUF file and two defensible placement scenarios, without
+loading the model or launching an engine.
 
-- Implement weight, KV-cache, and backend-overhead estimates from metadata.
-- Separate predictions, resolved configurations, and measurements.
-- Add RAM/VRAM budget policy and refusal/override rules.
-- Produce candidate lists for goals: speed, balanced, long context, largest model.
-- Add tests for GQA/MQA, quantized KV, zero/edge contexts, overflow, and
-  architecture-specific cases.
-- Calibrate against measurements only when Stage 05 data exists; until then label
-  estimates as uncalibrated.
-- Update status, roadmap, and Stage 03 report.
+**Delivered:**
 
-**Acceptance:** estimates are monotonic where expected, assumptions are visible,
-unsafe candidates are refused by default, and no estimate is presented as a
-measurement.
+- A fifth workspace crate, `ghostram-planner`, as a pure calculation core. It
+  accepts a compact model summary, a resource snapshot, and validated options; it
+  does not scan, probe, read files, start subprocesses, call an engine, or persist
+  state.
+- `ghostram models plan <path>` for one explicitly selected regular GGUF file,
+  with human and `ghostram.models.plan/1` JSON output. The command does not scan a
+  directory, hash automatically, use a default model path, or write a plan.
+- Evidence classes `observed`, `explicit_input`, `derived`, `estimated`,
+  `product_default`, and `unknown`. Unknown quantities carry a reason and no value
+  field; missing data is never converted to zero, and an estimate is never called a
+  measurement.
+- A low-confidence file-size proxy for modeled weights, with shard, sidecar,
+  malformed-file, and metadata-incomplete limitations visible. Exact tensor
+  allocation, quantization overhead, mmap residency, and GPU layer counts are not
+  inferred.
+- One documented KV-cache profile, `llama_uniform_full_attention_v1`, with formula
+  `uniform_kv_cache_v1` and method `uniform_full_attention`. It supports uniform
+  full-attention `llama` metadata, defaults missing KV-head and head-width fields
+  with visible provenance, and supports F16 (default) and F32 only. Quantized KV
+  caches and special attention layouts produce explicit unavailability, not
+  guessed values.
+- Checked `u64` byte arithmetic, non-negative effective budgets, configurable host
+  and device reserves, and conservative product defaults of 1,536 MiB host and
+  1,024 MiB device reserve.
+- Two qualified scenarios: `cpu_weights_and_kv` and
+  `device_weights_cpu_kv`. Outcomes are only
+  `estimated_components_within_budget`,
+  `estimated_components_exceed_budget`, and `insufficient_data`. The plan never
+  emits `model_fits`, `launchable`, `supported`, or `safe_to_run`.
+- A budget-limited context upper bound with declared-context, cap, and
+  runtime-overhead caveats.
+- Deterministic unit and CLI integration tests for arithmetic, reserves,
+  boundaries, overflow, profiles, missing metadata, cache types, proxy labeling,
+  device uncertainty, JSON round-trips, malformed files, output purity, and exit
+  codes.
+- [Memory planner behavior](MEMORY_PLANNER.md), [plan schema](PLAN_SCHEMA.md),
+  dated [KV-cache planning research](research/2026-10-21-kv-cache-planning.md), and
+  the [Stage 03 report](../reports/stages/stage-03-memory-planner.md).
+- Updated README, changelog, policy, status, architecture, testing, catalog,
+  engine-support, contributor, and user documentation. `ghostram.doctor/1` and
+  `ghostram.models.scan/1` are unchanged.
+
+**Acceptance evidence:** formatting, Clippy with warnings denied, all workspace
+tests, the locked workspace build, documentation checks, commit-range checks,
+diff checks, and local identity checks passed. Exact commands, counts, and outcomes
+are recorded in the Stage 03 report. All planner evidence uses synthetic GGUF
+metadata and synthetic resource snapshots. No real model, engine, GPU allocation,
+inference run, or benchmark was used, and no model or engine was installed or
+downloaded.
+
+**Gate:** the maintainer reviews the Stage 03 report and accepts the stage.
+Acceptance does not authorize Stage 04, a push, tag, GitHub Release, or promotion
+to `main`; each remains a separate decision.
+
+**Scope reconciliation:** the earlier Stage 03 wording named candidate lists,
+backend-overhead estimates, quantized-KV cases, unsafe-candidate refusal, and
+calibration against Stage 05 measurements. The maintainer-authorized Stage 03 scope
+was narrowed to a deterministic planning core with no runtime. Candidate
+generation, quantized-KV modeling, launch refusal/override policy, runtime pressure
+control, and calibration are deferred to later stages and are not hidden incomplete
+requirements. The planner reports `insufficient_data` rather than pretending to
+refuse a launch, because no launch path exists in Stage 03.
+
+**Non-goals:** model loading, tensor validation, engine compatibility, launch or
+refusal, process supervision, GPU layer prediction, partial offload, runtime
+overhead measurement, quantized KV, shard grouping, persistence, network access,
+GUI, and benchmarks.
 
 ## Stage 04 — Engine adapter and supervised runtime
 
+**State:** Next (blocked). It must not begin until Stage 03 is accepted.
+
 **Goal:** launch, observe, and stop a real engine safely.
+
+**Candidate evaluation plan (not started):**
+
+The first adapter remains official llama.cpp. Stage 04 planning must compare these
+configurations without installing or running any of them during Stage 03:
+
+1. **CPU baseline** on the primary laptop. It is the reference path and works
+   without a GPU runtime. Capture build identity, thread/context settings, memory,
+   and a small bounded smoke run only after approval.
+2. **Official Linux x64 CUDA 12.8 build** as the Pascal candidate. Verify the
+   artifact's actual device code, bundled runtime libraries, driver requirements,
+   and compute-capability 6.1 behavior at the artifact level. The label alone is
+   not evidence.
+3. **Official Linux x64 Vulkan build** as the independent GPU candidate. Verify
+   explicit selection of the NVIDIA GTX 1050 Ti rather than the Intel iGPU, then
+   compare startup, correctness, and memory behavior with CUDA.
+4. **A source build targeting `sm_61` with a CUDA 12.x toolkit**, only if a later
+   approved stage installs the required toolchain. It is a comparison candidate,
+   not a default. CUDA 13.x is not assumed to build Pascal device code.
+
+Do not install a toolkit or engine, download a model, run inference, run a
+benchmark, or change drivers as part of Stage 04 planning. Each candidate requires
+an explicit build identity, checksum/provenance, runtime-dependency check, device
+visibility check, and a separately approved smoke test.
 
 **Scope:**
 
@@ -183,7 +266,7 @@ measurement.
 - Select and pin the first engine build only after checking its build identity,
   checksum, runtime dependencies, device visibility, and launch behavior.
 - Perform the first engine installation and smoke test on the laptop only with
-  separate maintainer approval and a small model. Not in Stage 01.
+  separate maintainer approval and a small model. Not part of Stage 03 planning.
 - Keep the MVP detection-first: do not bundle engine binaries. A later voluntary
   download into a managed directory needs consent, checksums, and license review.
 - Update status, roadmap, and Stage 04 report.

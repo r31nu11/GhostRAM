@@ -1,9 +1,10 @@
 # Quick start
 
-**Status: no release; source diagnostics and a source model scanner are available.**
-There is no installer or supported release. A developer can build the source and
-run the read-only `ghostram doctor` and `ghostram models scan` commands. The
-multi-step inference flow below remains a product contract for a future release.
+**Status: no release; source diagnostics, a model scanner, and a memory planner are
+available.** There is no installer or supported release. A developer can build the
+source and run the read-only `ghostram doctor`, `ghostram models scan`, and
+`ghostram models plan` commands. The multi-step inference flow below remains a
+product contract for a future release.
 
 Do not install an engine, download a model, or change system settings solely
 because this page describes a planned feature. Those actions require explicit
@@ -51,7 +52,33 @@ cache, database, `models list`, shard grouping, or engine cross-check. The JSON
 contract is in [MODELS_SCHEMA.md](MODELS_SCHEMA.md) and the parser/scan limits are
 in [GGUF_CATALOG.md](GGUF_CATALOG.md).
 
-## 3. Planned first-run flow
+## 3. Source-development memory plan check
+
+The planner requires one explicitly selected GGUF file. It does not scan a
+directory, choose a model automatically, or hash the file:
+
+```sh
+cargo run -p ghostram-cli -- models plan /path/to/model.gguf
+cargo run -p ghostram-cli -- models plan /path/to/model.gguf --json
+cargo run -p ghostram-cli -- models plan /path/to/model.gguf \
+  --context 4096 --sequences 1 --kv-cache f16
+```
+
+Useful options include `--context`, `--sequences`, `--kv-cache f16|f32`,
+`--ram-reserve-mib`, `--vram-reserve-mib`, and `--device`. Defaults are visible in
+the output. The command reads host memory and NVIDIA device information, but never
+launches or probes an inference engine.
+
+The plan reports only modeled weights (a low-confidence file-size proxy) and a
+narrow uniform full-attention `llama` KV estimate. Outcomes are qualified as
+`estimated_components_within_budget`, `estimated_components_exceed_budget`, or
+`insufficient_data`. A within-budget result does **not** mean that the model will
+load or run: runtime/backend overhead is unknown, and launch success is not
+verified. The JSON contract is in [PLAN_SCHEMA.md](PLAN_SCHEMA.md); behavior,
+formula limits, and evidence classes are in
+[MEMORY_PLANNER.md](MEMORY_PLANNER.md).
+
+## 4. Planned first-run flow
 
 When an alpha exists, a new user should be able to:
 
@@ -65,9 +92,10 @@ When an alpha exists, a new user should be able to:
 4. **Inspect discovered models.** The source scanner shows architecture, common
    context/layer/attention fields, a quantization hint, file size, filename hints,
    and an optional hash. It does not group shards or prove engine compatibility.
-5. **Review a plan.** GhostRAM shows candidate configurations with explicit
-   estimates, assumptions, and safety budgets. Estimates are labeled as
-   estimates.
+5. **Review a plan.** The source planner now shows modeled weights, a narrow KV
+   estimate, evidence classes, assumptions, reserves, and two qualified scenarios.
+   A plan is not a candidate optimization or a launch decision. Candidate search
+   remains planned.
 6. **Run one bounded experiment.** With the user's confirmation, GhostRAM starts
    the selected engine on loopback, waits for readiness, sends a bounded request,
    samples memory and pressure, and stops the process.
@@ -79,10 +107,12 @@ When an alpha exists, a new user should be able to:
 
 Steps 1-2 are represented only by source commands and the read-only diagnostics;
 steps 3-4 have a source scanner but no release UX, persistent catalog, or shard
-grouping. Steps 5-8 are planned. None of the full flow has been implemented or
-validated end to end.
+grouping. Step 5 has a source planner for modeled weights and one narrow KV profile,
+but no engine allocation validation, candidate search, or launch decision. Steps
+6-8 are planned. None of the full flow has been implemented or validated end to
+end.
 
-## 4. What the first release will not do
+## 5. What the first release will not do
 
 - It will not install GPU drivers or a CUDA toolkit.
 - It will not silently download models or engines.
@@ -91,21 +121,24 @@ validated end to end.
 - It will not replace llama.cpp or another inference engine.
 - It will not require root or a system-wide daemon.
 
-## 5. Current alternatives
+## 6. Current alternatives
 
-The source-built read-only commands are `ghostram doctor` and
-`ghostram models scan`. There is no planner, engine runtime, benchmark, or GUI to
-quick-start. The model catalog is a metadata scanner, not a model loader. If you
-are looking for a working local inference tool today, use the engine project
-directly and follow its own documentation; GhostRAM does not yet wrap or replace
-it.
+The source-built read-only commands are `ghostram doctor`,
+`ghostram models scan`, and `ghostram models plan`. There is no engine runtime,
+benchmark, tuner, or GUI to quick-start. The model catalog is a metadata scanner,
+not a model loader. The planner is a pure estimate, not a launcher or safety
+proof. If you are looking for a working local inference tool today, use the engine
+project directly and follow its own documentation; GhostRAM does not yet wrap or
+replace it.
 
-## 6. Related documents
+## 7. Related documents
 
 - [Installation contract](INSTALL.md)
 - [Project status](PROJECT_STATUS.md)
 - [Doctor schema](DOCTOR_SCHEMA.md)
 - [GGUF catalog behavior](GGUF_CATALOG.md)
 - [Model scan schema](MODELS_SCHEMA.md)
+- [Memory planner behavior](MEMORY_PLANNER.md)
+- [Plan schema](PLAN_SCHEMA.md)
 - [Troubleshooting](TROUBLESHOOTING.md)
 - [Benchmarking methodology](BENCHMARKING.md)

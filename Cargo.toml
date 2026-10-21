@@ -3,6 +3,7 @@ resolver = "3"
 members = [
     "crates/ghostram-core",
     "crates/ghostram-models",
+    "crates/ghostram-planner",
     "crates/ghostram-probe",
     "crates/ghostram-cli",
 ]
@@ -23,4 +24,5 @@ serde_json = "1.0"
 sha2 = "0.10.9"
 ghostram-core = { path = "crates/ghostram-core" }
 ghostram-models = { path = "crates/ghostram-models" }
+ghostram-planner = { path = "crates/ghostram-planner" }
 ghostram-probe = { path = "crates/ghostram-probe" }

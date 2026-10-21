@@ -213,8 +213,61 @@ pub struct FileType {
     pub label: Option<String>,
 }
 
+/// A recognized architecture-specific metadata key.
+///
+/// Presence is tracked separately from a usable numeric value so that a key
+/// encoded with an unsupported type is not mistaken for an absent key. These
+/// values are internal planner inputs and are not serialized into the
+/// `ghostram.models.scan/1` contract.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum ArchitectureKey {
+    /// Context length in tokens.
+    ContextLength,
+    /// Embedding width.
+    EmbeddingLength,
+    /// Number of transformer blocks or layers.
+    BlockCount,
+    /// Feed-forward width.
+    FeedForwardLength,
+    /// Number of attention heads.
+    AttentionHeadCount,
+    /// Number of key/value attention heads.
+    AttentionHeadCountKv,
+    /// Attention key width.
+    AttentionKeyLength,
+    /// Attention value width.
+    AttentionValueLength,
+    /// Total expert count.
+    ExpertCount,
+    /// Experts used per token.
+    ExpertUsedCount,
+    /// RoPE dimension count.
+    RopeDimensionCount,
+}
+
+/// A recognized GGUF key that changes the attention layout in a way the
+/// uniform KV-cache profile does not model.
+///
+/// These values are internal planner inputs and are not serialized into the
+/// `ghostram.models.scan/1` contract.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum AttentionLayoutKey {
+    /// Sliding-window attention is enabled.
+    SlidingWindow,
+    /// A sliding-window layer pattern is declared.
+    SlidingWindowPattern,
+    /// Sliding-window key dimension is declared.
+    KeyLengthSwa,
+    /// Sliding-window value dimension is declared.
+    ValueLengthSwa,
+}
+
 /// Architecture-specific values recognized across GGUF model families.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+///
+/// Equality covers the serialized contract. The internal `present_keys` and
+/// `attention_layout_keys` planning markers are excluded because they are not
+/// part of `ghostram.models.scan/1` and are not restored by deserialization.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ArchitectureFields {
     /// Context length in tokens.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -249,7 +302,33 @@ pub struct ArchitectureFields {
     /// RoPE dimension count, when applicable.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub rope_dimension_count: Option<Field<u64>>,
+    /// Recognized architecture keys that were present in the file, including
+    /// keys whose values were not usable as unsigned scalars. Not serialized.
+    #[serde(skip)]
+    pub present_keys: Vec<ArchitectureKey>,
+    /// Recognized attention-layout keys that the uniform KV-cache profile does
+    /// not model. Not serialized.
+    #[serde(skip)]
+    pub attention_layout_keys: Vec<AttentionLayoutKey>,
 }
+
+impl PartialEq for ArchitectureFields {
+    fn eq(&self, other: &Self) -> bool {
+        self.context_length == other.context_length
+            && self.embedding_length == other.embedding_length
+            && self.block_count == other.block_count
+            && self.feed_forward_length == other.feed_forward_length
+            && self.attention_head_count == other.attention_head_count
+            && self.attention_head_count_kv == other.attention_head_count_kv
+            && self.attention_key_length == other.attention_key_length
+            && self.attention_value_length == other.attention_value_length
+            && self.expert_count == other.expert_count
+            && self.expert_used_count == other.expert_used_count
+            && self.rope_dimension_count == other.rope_dimension_count
+    }
+}
+
+impl Eq for ArchitectureFields {}
 
 /// Tokenizer metadata summarized without token strings or merge tables.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]

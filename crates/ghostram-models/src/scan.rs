@@ -82,6 +82,53 @@ pub fn scan_directory(
     )
 }
 
+/// Inspects one explicitly selected regular file without hashing it.
+///
+/// The file is parsed as GGUF with the same bounded parser and symlink policy as
+/// a directory scan. A readable file with unsupported or malformed content is
+/// returned as an entry with the corresponding [`ParseStatus`]; only a path that
+/// cannot be selected safely (missing, symbolic link, non-regular, or non-UTF-8)
+/// returns an error.
+///
+/// # Errors
+///
+/// Returns [`ScanError`] when the path cannot be resolved, is a symbolic link,
+/// is not a regular file, or cannot be represented as UTF-8.
+pub fn inspect_file(path: &Path) -> Result<FileCatalogEntry, ScanError> {
+    let absolute = std::path::absolute(path)
+        .map_err(|error| ScanError::new(path, format!("could not resolve path: {error}")))?;
+    if absolute.to_str().is_none() {
+        return Err(ScanError::new(
+            &absolute,
+            "selected file path is not valid UTF-8",
+        ));
+    }
+    let metadata = fs::symlink_metadata(&absolute)
+        .map_err(|error| ScanError::new(&absolute, format!("could not inspect path: {error}")))?;
+    if metadata.file_type().is_symlink() {
+        return Err(ScanError::new(
+            &absolute,
+            "selected file is a symbolic link; select the real file explicitly",
+        ));
+    }
+    if !metadata.is_file() {
+        return Err(ScanError::new(
+            &absolute,
+            "selected path is not a regular file",
+        ));
+    }
+
+    let mut observer = |_event: ScanEvent<'_>| {};
+    Ok(inspect_candidate(
+        &absolute,
+        ScanOptions {
+            recursive: false,
+            hash: false,
+        },
+        &mut observer,
+    ))
+}
+
 fn scan_directory_with<F>(
     root: &Path,
     options: ScanOptions,
@@ -704,7 +751,9 @@ mod tests {
     use std::sync::atomic::{AtomicU64, Ordering};
     use std::time::{SystemTime, UNIX_EPOCH};
 
-    use super::{ScanEvent, TraversalLimits, scan_directory, scan_directory_with};
+    use super::{ScanEvent, TraversalLimits, inspect_file, scan_directory, scan_directory_with};
+    use ghostram_core::quantity::Bytes;
+
     use crate::catalog::{
         FailureKind, HashStatus, MetadataState, ModelsScanEnvelope, ParseStatus, ScanOptions,
         ScanState,
@@ -775,6 +824,65 @@ mod tests {
         assert!(super::is_gguf_path(Path::new(".gguf")));
         assert!(!super::is_gguf_path(Path::new("model.gguf.bak")));
         assert!(!super::is_gguf_path(Path::new("gguf")));
+    }
+
+    #[test]
+    fn inspects_one_explicit_file_without_hashing() {
+        let temp = TempDir::new();
+        let bytes = valid_fixture("explicit");
+        let path = temp.write("model.gguf", &bytes);
+
+        let entry = inspect_file(&path).expect("explicit file is inspected");
+        assert_eq!(entry.parse_status, ParseStatus::Parsed);
+        assert_eq!(entry.file_size, Some(Bytes::new(bytes.len() as u64)));
+        assert_eq!(entry.hash.status, HashStatus::NotRequested);
+        assert_eq!(
+            entry
+                .metadata
+                .as_ref()
+                .unwrap()
+                .general
+                .name
+                .as_ref()
+                .unwrap()
+                .value,
+            "explicit"
+        );
+    }
+
+    #[test]
+    fn inspect_file_reports_malformed_content_as_an_entry() {
+        let temp = TempDir::new();
+        let mut bytes = b"NOTG".to_vec();
+        bytes.extend_from_slice(&[0_u8; 20]);
+        let path = temp.write("bad.gguf", &bytes);
+        let entry = inspect_file(&path).expect("readable malformed file is an entry");
+        assert_eq!(entry.parse_status, ParseStatus::Malformed);
+        assert_eq!(
+            entry.failure.as_ref().unwrap().kind,
+            FailureKind::InvalidMagic
+        );
+        assert!(entry.file_size.is_some());
+    }
+
+    #[test]
+    fn inspect_file_rejects_symlinks_directories_and_missing_paths() {
+        let temp = TempDir::new();
+        let target = temp.write("target.gguf", &valid_fixture("target"));
+        let link = temp.path().join("link.gguf");
+        #[cfg(unix)]
+        {
+            std::os::unix::fs::symlink(&target, &link).expect("create symlink");
+            let error = inspect_file(&link).unwrap_err();
+            assert!(error.message().contains("symbolic link"));
+        }
+
+        let error = inspect_file(temp.path()).unwrap_err();
+        assert!(error.message().contains("not a regular file"));
+
+        let missing = temp.path().join("missing.gguf");
+        let error = inspect_file(&missing).unwrap_err();
+        assert!(error.message().contains("could not inspect path"));
     }
 
     #[test]

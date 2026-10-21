@@ -1,10 +1,11 @@
 # Testing strategy
 
-**Status:** Stage 02 (pending acceptance). The Rust workspace, read-only diagnostic
-probes, bounded GGUF metadata parser, model scanner, CLI, parser fixtures, unit
-tests, integration tests, and Rust CI job exist. There is still no engine adapter,
-model loader, inference, or benchmark harness to test. No real GGUF model was
-available; model tests use deterministic synthetic files.
+**Status:** Stage 03 (pending formal acceptance). The Rust workspace, read-only
+diagnostic probes, bounded GGUF metadata parser, model scanner, pure memory planner,
+CLI, parser and planner fixtures, unit tests, integration tests, and Rust CI job
+exist. There is still no engine adapter, model loader, inference, or benchmark
+harness to test. No real GGUF model was available; model and planner tests use
+deterministic synthetic files and synthetic resource snapshots.
 
 ## 1. Principles
 
@@ -21,7 +22,7 @@ available; model tests use deterministic synthetic files.
 6. Benchmarks are experiments, not tests. Their methodology and evidence rules
    are in [BENCHMARKING.md](BENCHMARKING.md).
 
-## 2. Current checks (Stage 02)
+## 2. Current checks (Stage 03)
 
 Run from the repository root:
 
@@ -40,24 +41,25 @@ git diff --check
 | --- | --- | --- |
 | `cargo fmt --check` | Rust source matches the workspace formatting. | Code quality or behavior. |
 | `cargo clippy ... -D warnings` | No warnings from the configured Clippy lint set. | Absence of logic bugs, security issues, or hardware compatibility. |
-| `cargo test --workspace` | Diagnostic parser fixtures, GGUF parser/scan fixtures, report models, bounded-command behavior, CLI argument handling, and CLI integration tests pass. | That real engines, models, CUDA, or Vulkan inference work. |
+| `cargo test --workspace` | Diagnostic parser fixtures, GGUF parser/scan fixtures, planner arithmetic/formula/evidence tests, report models, bounded-command behavior, CLI argument handling, and CLI integration tests pass. | That real engines, models, CUDA/Vulkan inference, allocations, or runtime overhead work as estimated. |
 | `cargo build --workspace --locked` | The workspace builds from the committed dependency lockfile. | That a release artifact exists or that another platform builds. |
 | `check_docs.py` | Required files exist; relative Markdown links resolve; ADRs have required fields; stage reports have all 14 sections. | That prose is accurate, that external URLs are live, or that instructions work. |
 | `check-commit-message.sh` | One message follows the header/body convention and has `Changes:`, `Reason:`, and `Validation:` bullets. | That the change is correct or that validation claims are true. |
 | `check-commit-range.sh` | Commits in a range follow the convention. | That the range is the right comparison base. |
 | `git diff --check` | No whitespace errors are introduced in tracked changes. | Markdown correctness or code quality. |
 
-The observed results of these commands for Stage 02 are recorded in the
-[Stage 02 report](../reports/stages/stage-02-gguf-model-catalog.md). Stage 01
-results remain in the
-[Stage 01 report](../reports/stages/stage-01-minimal-rust-workspace.md). Do not
-repeat a result here without re-running the command.
+The observed results of these commands for Stage 03 are recorded in the
+[Stage 03 report](../reports/stages/stage-03-memory-planner.md). Stage 01 and
+Stage 02 results remain in their
+[Stage 01 report](../reports/stages/stage-01-minimal-rust-workspace.md) and
+[Stage 02 report](../reports/stages/stage-02-gguf-model-catalog.md). Do not repeat
+a result here without re-running the command.
 
 ## 3. Test layers
 
 ### 3.1 Unit tests
 
-Implemented in Stages 01 and 02:
+Implemented in Stages 01, 02, and 03:
 
 - `Bytes` conversion, overflow, display, and integer JSON serialization.
 - Diagnostic-state and envelope behavior, including schema rejection.
@@ -82,14 +84,20 @@ Implemented in Stages 01 and 02:
   candidates, empty directories, deterministic filename/shard hints, summary
   consistency, change detection, and optional hash success/failure/no-partial
   behavior.
+- Planner unit tests for checked byte arithmetic, evidence classes, file-size proxy
+  labeling, KV formula and dimension provenance, F16/F32 scaling, unsupported
+  layouts, missing or unusable metadata, zero/edge values, overflow, reserves,
+  non-negative budgets, comparison precedence, scenario ordering, warning and
+  unknown de-duplication, and envelope round-trips.
 - Contract serialization proving token values, merge values, and chat-template
   text are absent, plus CLI argument parsing and human rendering.
 
 Planned for later stages:
 
-- Planner formulas: RAM/VRAM estimates, KV-cache scaling, and overflow checks.
-- Real-model parser cross-check with an approved model and engine.
-- Configuration resolution: intent-to-flag mapping and provenance.
+- Real-model parser and planner cross-check with an approved model and engine.
+- Real allocation calibration for weights, KV cache, backend workspace, and
+  runtime overhead.
+- Runtime configuration resolution: intent-to-flag mapping and provenance.
 
 Unit tests use small fixtures, either checked-in parser captures or deterministic
 byte builders, not live hardware. A parser test must include at least one malformed
@@ -97,7 +105,7 @@ or truncated fixture.
 
 ### 3.2 Integration tests
 
-Implemented in Stages 01 and 02:
+Implemented in Stages 01, 02, and 03:
 
 - CLI valid JSON on stdout with no human-readable noise.
 - Valid partial JSON when `PATH` makes optional tools unavailable.
@@ -108,6 +116,13 @@ Implemented in Stages 01 and 02:
   behavior, human/JSON output, root failure exit 1, and no hash unless requested.
 - Model-scan JSON stays well formed for mixed valid/malformed directories, and a
   hash result is absent unless the complete file was read.
+- `models plan` help, missing path/unknown option/duplicate option usage errors,
+  explicit file selection, missing/directory/symlink failures, malformed-file
+  success with partial plan, human/JSON output, output purity, context/sequence/
+  cache/reserve/device options, and exit codes.
+- Planner integration scenarios for CPU and device budgets, missing host or device
+  observations, device selection, unsupported KV layout, shard/sidecar hints,
+  shortfalls, reserve exhaustion, and JSON round-trips.
 
 Planned for later stages:
 
@@ -129,6 +144,9 @@ tests do not require a GPU, engine, or model.
   builds. These fixtures are labeled with engine build and capture date.
 - Capability claims distinguish `supported`, `unsupported`, and `unknown`; a
   missing probe must not become `supported`.
+- Planner JSON preserves evidence tags, rejects unqualified fit/launch terms, and
+  keeps unknown quantities distinct from zero. This is a schema/purity test, not
+  an allocation or engine-safety proof.
 
 ### 3.4 Hardware tests
 
@@ -144,6 +162,9 @@ Hardware tests are manual and recorded, not hidden in CI:
   on the primary laptop.
 - Real-model GGUF parsing or hashing: not performed; no real model was available
   or downloaded. Stage 02 uses synthetic files in temporary directories.
+- Real-model memory planning or allocation comparison: not performed. Stage 03
+  uses synthetic GGUF metadata and synthetic resource snapshots; it did not measure
+  weights, KV cache, backend workspace, or runtime overhead.
 - A small-model smoke run on CPU and at least one GPU backend, only with
   maintainer approval: not performed; no engine or model is installed.
 - Cleanup after success, failure, timeout, and interrupt for a real engine: not
@@ -190,7 +211,7 @@ run GPU tests or download engines or models.
 
 The current workflow (`.github/workflows/quality.yml`) runs documentation checks,
 commit-range checks, and a Rust job with formatting, Clippy, tests, and a locked
-build. At Stage 02 authoring time the workflow had been parsed locally but had not
+build. At Stage 03 authoring time the workflow had been parsed locally but had not
 executed on GitHub Actions; a later authorized publication may trigger it. CI
 results do not replace local validation recorded in the stage report. GPU tests
 will not run in hosted CI; they require a self-hosted machine and an explicit

@@ -2,10 +2,11 @@
 
 **Research date:** 2026-10-20 (UTC); model-format review updated 2026-10-21.
 **Status:** Stage 00 research accepted; Stage 01 accepts read-only discovery only;
-Stage 02 adds a bounded read-only GGUF catalog (pending formal acceptance). No
-engine combination below has been executed by GhostRAM on the primary laptop.
-"Expected" does not mean "verified", and a discovered executable or a cataloged
-GGUF file does not mean "supported".
+Stage 02 adds a bounded read-only GGUF catalog, accepted on 2026-10-21; Stage 03
+adds a pure memory planner pending formal acceptance. No engine combination below
+has been executed by GhostRAM on the primary laptop. "Expected" does not mean
+"verified", and a discovered executable, a cataloged GGUF file, or a within-budget
+plan does not mean "supported".
 **Canonical evidence:** [engine research notes](research/2026-10-20-engine-landscape.md)
 and [GGUF format research](research/2026-10-21-gguf-catalog-format.md).
 **Decision:** [ADR-0003](adr/0003-engine-integration-strategy.md).
@@ -70,6 +71,24 @@ with an installed runtime. It does not install, update, or launch an engine. On 
 development laptop no llama.cpp executable was installed, so the Stage 01 report
 contains an empty engine list. That is an absence observation, not a support
 result.
+
+### 2.2 Stage 04 candidate build planning
+
+Stage 03 does not install, download, launch, or benchmark an engine. Stage 04
+planning must evaluate these candidates as **separate build configurations**, each
+with its own build identity, provenance/checksum, runtime dependencies, device
+visibility, and launch evidence:
+
+| Candidate | Role in Stage 04 planning | Evidence still required |
+| --- | --- | --- |
+| CPU baseline | Reference and fallback on the primary laptop. | Build identity, thread/context configuration, memory behavior, and a bounded smoke run after approval. |
+| Official Linux x64 CUDA 12.8 build | Primary Pascal GPU candidate. | Actual device code/PTX, bundled `libcudart`/cuBLAS, driver requirement, and cc 6.1 initialization. |
+| Official Linux x64 Vulkan build | Independent GPU candidate. | Explicit NVIDIA device selection, startup/correctness, and comparison with CUDA. |
+| Source build targeting `sm_61` with CUDA 12.x | Comparison candidate only if a later approved stage installs the toolchain. | Compiler/toolkit version, `CMAKE_CUDA_ARCHITECTURES=61` output, runtime dependencies, and measured behavior. |
+
+A prebuilt label is not a support claim. CUDA 13.x is not assumed to build Pascal
+device code. Do not install a toolkit or engine, download a model, run inference,
+run a benchmark, or change drivers as part of this planning.
 
 ## 3. Compatibility and investigation matrix
 
@@ -334,6 +353,25 @@ subset. Crates such as `gguf` and `gguf-rs` were not audited, and `gguf-py`
 `gguf_dump.py` remains a development reference only. The selected parser is not a
 general-purpose loader or a full GGUF validator; see
 [GGUF_CATALOG.md](GGUF_CATALOG.md).
+
+### 6.1 Stage 03 planning boundary
+
+`ghostram models plan` does not change the engine matrix. It produces a qualified
+estimate for one explicitly selected GGUF file using only:
+
+- the observed file size as a low-confidence resident-weight proxy;
+- a narrow uniform full-attention `llama` KV formula with F16 or F32 elements;
+- observed host `MemAvailable`, NVIDIA total/used memory, and derived free device
+  memory; and
+- configurable host/device reserves and context/sequence options.
+
+It does not model engine-specific tensor placement, GPU layer counts, backend
+workspace, graph allocations, quantized KV cache, CUDA/Vulkan differences, or
+runtime overhead. The outcomes `estimated_components_within_budget`,
+`estimated_components_exceed_budget`, and `insufficient_data` are not engine
+support verdicts. No engine artifact was installed, launched, or validated in
+Stage 03. See [MEMORY_PLANNER.md](MEMORY_PLANNER.md) and
+[PLAN_SCHEMA.md](PLAN_SCHEMA.md).
 
 ## 7. Measurement approach by engine
 

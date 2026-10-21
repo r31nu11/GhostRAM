@@ -4,13 +4,15 @@ GhostRAM is a planned open-source Rust application for intelligent local LLM
 inference configuration, resource management, benchmarking, and optimization on
 constrained hardware.
 
-> **Status: Stage 01 accepted; Stage 02 GGUF catalog implementation complete and
-> pending formal acceptance.** A source-buildable `ghostram` CLI provides a
-> read-only `doctor` command and a read-only `models scan` command with
-> human-readable and versioned JSON output. There is still no release artifact,
-> installer, engine integration, inference, benchmark result, or GUI. No engine
-> or model was installed or downloaded for Stage 02. Do not treat
-> source-development commands as an end-user installation.
+> **Status: Stage 02 accepted; Stage 03 memory planner implemented and pending
+> formal acceptance.** A source-buildable `ghostram` CLI provides a read-only
+> `doctor` command, a read-only `models scan` command, and a deterministic
+> `models plan` command with human-readable and versioned JSON output. There is
+> still no release artifact, installer, engine integration, inference, benchmark
+> result, or GUI. No engine or model was installed or downloaded for Stage 03,
+> and no real model was tested. Planning results are evidence-labelled estimates,
+> not measurements or a safety proof. Do not treat source-development commands as
+> an end-user installation.
 
 ## What GhostRAM is intended to do
 
@@ -56,7 +58,7 @@ The immediate development and validation laptop, as observed on 2026-10-20:
 | Storage | Approximately 41 GiB free on `/` at the Stage 01 run; the repository resides on `/myfiles` |
 
 A secondary validation machine (GTX 1070, 16 GiB RAM, Intel i5-8600) is planned
-but was not accessed through Stage 02. Its exact configuration must be verified
+but was not accessed through Stage 03. Its exact configuration must be verified
 before any claim is made about it.
 
 ## Current state
@@ -72,7 +74,10 @@ before any claim is made about it.
 | Engine integration | Process adapter and inference launch **not implemented** |
 | GGUF model catalog | Bounded v2/v3 little-endian metadata parser, directory scanner, filename hints, and optional streaming SHA-256 implemented; **no real model tested and no engine cross-check** |
 | Model catalog storage | No cache, database, watch mode, or `models list`; scans are point-in-time and read-only |
-| Planner, tuner, runtime, store | Architecture boundaries documented; **not implemented** |
+| Memory planner | Pure deterministic file-size weight proxy, narrow uniform `llama` KV formula, evidence classes, configurable reserves, two qualified scenarios, and `ghostram.models.plan/1`; **synthetic inputs only and no engine allocation validation** |
+| Planner persistence | Plans are ephemeral; no plan store, cache, or database |
+| Planner safety governor | No launch refusal or runtime pressure control exists because there is no launch path; those remain later-stage requirements |
+| Tuner, runtime, store | Architecture boundaries documented; **not implemented** |
 | Iced UI | Planned; **not started** |
 | Benchmarks | Methodology documented; **no benchmarks executed and no results exist** |
 
@@ -87,13 +92,17 @@ Start here:
 - [Doctor schema](docs/DOCTOR_SCHEMA.md) — versioned diagnostic JSON contract.
 - [GGUF catalog behavior](docs/GGUF_CATALOG.md) — parser boundary, scanning, limits, hashing, and non-claims.
 - [Model scan schema](docs/MODELS_SCHEMA.md) — versioned `ghostram.models.scan/1` JSON contract.
+- [Memory planner behavior](docs/MEMORY_PLANNER.md) — pure calculation boundary, evidence classes, KV/profile scope, reserves, scenarios, and limitations.
+- [Plan schema](docs/PLAN_SCHEMA.md) — versioned `ghostram.models.plan/1` JSON contract.
+- [KV-cache planning research](docs/research/2026-10-21-kv-cache-planning.md) — Stage 03 upstream formula evidence and confidence.
 - [Engine support](docs/ENGINE_SUPPORT.md) — integration matrix and confidence levels.
 - [Benchmarking](docs/BENCHMARKING.md) — methodology and reporting contract.
 - [Engine research notes](docs/research/2026-10-20-engine-landscape.md) — Stage 00 sources and evidence.
 - [GGUF format research note](docs/research/2026-10-21-gguf-catalog-format.md) — Stage 02 sources and conformance boundaries.
 - [Stage 00 report](reports/stages/stage-00-technical-reconnaissance.md) — accepted foundation and validation.
 - [Stage 01 report](reports/stages/stage-01-minimal-rust-workspace.md) — accepted diagnostic implementation and validation.
-- [Stage 02 report](reports/stages/stage-02-gguf-model-catalog.md) — model catalog implementation, validation, and pending acceptance.
+- [Stage 02 report](reports/stages/stage-02-gguf-model-catalog.md) — accepted model catalog implementation and validation.
+- [Stage 03 report](reports/stages/stage-03-memory-planner.md) — memory planner implementation, validation, and pending acceptance.
 
 For users and future contributors:
 
@@ -109,9 +118,9 @@ For users and future contributors:
 ## Build from source for development
 
 There is no release or installer. The source workspace contains exactly
-`ghostram-core`, `ghostram-models`, `ghostram-probe`, and `ghostram-cli`; building
-it requires a Rust toolchain. This is a development workflow, not an end-user
-installation.
+`ghostram-core`, `ghostram-models`, `ghostram-planner`, `ghostram-probe`, and
+`ghostram-cli`; building it requires a Rust toolchain. This is a development
+workflow, not an end-user installation.
 
 ```sh
 cargo build --workspace --locked
@@ -119,6 +128,8 @@ cargo run -p ghostram-cli -- doctor
 cargo run -p ghostram-cli -- doctor --json
 cargo run -p ghostram-cli -- models scan ./models
 cargo run -p ghostram-cli -- models scan ./models --recursive --json
+cargo run -p ghostram-cli -- models plan ./models/model.gguf
+cargo run -p ghostram-cli -- models plan ./models/model.gguf --json
 ```
 
 The `doctor` command is read-only. It reports missing optional tools, GPUs,
@@ -127,10 +138,14 @@ Vulkan devices, and engines as absent or unavailable rather than failing. The
 by default, skips symlinks, and parses only bounded GGUF metadata and tensor
 descriptors. `--recursive` descends into subdirectories. `--hash` explicitly
 streams complete files through SHA-256 and therefore reads all model bytes; without
-it, tensor payloads are not read. There is no default model path, cache, database,
-watch mode, shard grouping, or engine cross-check. The schemas are documented in
-[docs/DOCTOR_SCHEMA.md](docs/DOCTOR_SCHEMA.md) and
-[docs/MODELS_SCHEMA.md](docs/MODELS_SCHEMA.md).
+it, tensor payloads are not read. `models plan` requires one explicitly selected
+GGUF file, does not hash or rescan it, reads host memory and NVIDIA memory only for
+the plan, and emits a qualified `ghostram.models.plan/1` estimate. It has no plan
+cache or database and never launches an engine. The schemas are documented in
+[docs/DOCTOR_SCHEMA.md](docs/DOCTOR_SCHEMA.md),
+[docs/MODELS_SCHEMA.md](docs/MODELS_SCHEMA.md), and
+[docs/PLAN_SCHEMA.md](docs/PLAN_SCHEMA.md); planner scope and limits are in
+[docs/MEMORY_PLANNER.md](docs/MEMORY_PLANNER.md).
 
 Run the repository checks from the root:
 
@@ -164,11 +179,16 @@ does not launch inference, and kills bounded subprocesses on timeout. Stage 02
 adds read-only model scanning with checked reads, explicit resource limits, no
 symlink traversal, no model writes, no cache, and no network behavior. Optional
 SHA-256 reads complete files only on explicit request and never reports a digest
-after a partial or failed read. Planned safeguards for later stages include
-explicit memory budgets, one heavy inference process at a time, loopback-only
-engine servers, no silent downloads, and termination of child processes on
-resource pressure. Those later safeguards are design requirements, not
-implemented behavior.
+after a partial or failed read. Stage 03 adds a pure planner that consumes one
+inspected file and a lightweight memory/NVIDIA snapshot; it performs checked integer
+arithmetic, labels every quantity with its evidence class, and reports only
+qualified within-budget, exceeded-budget, or insufficient-data outcomes. It does
+not launch or refuse an engine, sample runtime pressure, or claim that a model is
+launchable or safe. Planned safeguards for later stages include launch refusal and
+override policy, one heavy inference process at a time, loopback-only engine
+servers, no silent downloads, and termination of child processes on resource
+pressure. Those later safeguards are design requirements, not implemented
+behavior.
 
 ## License
 

@@ -28,7 +28,10 @@ REQUIRED_FILES = [
     "docs/DOCTOR_SCHEMA.md",
     "docs/GGUF_CATALOG.md",
     "docs/MODELS_SCHEMA.md",
+    "docs/MEMORY_PLANNER.md",
+    "docs/PLAN_SCHEMA.md",
     "docs/research/2026-10-21-gguf-catalog-format.md",
+    "docs/research/2026-10-21-kv-cache-planning.md",
     "docs/TESTING.md",
     "docs/ENGINE_SUPPORT.md",
     "docs/CONTRIBUTING.md",
@@ -42,6 +45,7 @@ REQUIRED_FILES = [
     "reports/stages/stage-00-technical-reconnaissance.md",
     "reports/stages/stage-01-minimal-rust-workspace.md",
     "reports/stages/stage-02-gguf-model-catalog.md",
+    "reports/stages/stage-03-memory-planner.md",
     "reports/stages/TEMPLATE.md",
     "reports/benchmarks/README.md",
 ]

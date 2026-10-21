@@ -2,8 +2,9 @@
 
 **Status:** Stage 00 architecture accepted; ADR-0001 through ADR-0005 accepted.
 Stage 01 added the diagnostic spine in `ghostram-core`, `ghostram-probe`, and
-`ghostram-cli`. Stage 02 adds `ghostram-models` and a read-only GGUF catalog
-boundary. Later components remain planned. No new ADR was required: the fourth
+`ghostram-cli`. Stage 02 added `ghostram-models` and a read-only GGUF catalog
+boundary. Stage 03 adds `ghostram-planner` and a pure, versioned memory-plan
+boundary. Later components remain planned. No new ADR was required: the fifth
 crate follows the crate-split rule in ADR-0002 and does not change an accepted
 decision.
 **Related decisions:** [ADR-0002](adr/0002-modular-monolith-and-crate-split.md),
@@ -69,7 +70,7 @@ planner or the stored history.
 | `ghostram-probe` | Read-only Linux diagnostics: OS/kernel, CPU, memory, swap/zram, storage, NVIDIA GPU/driver, Vulkan devices, tools, and external engine discovery. | Crate |
 | `ghostram-models` | User-selected local GGUF discovery, bounded metadata parsing, filename hints, and optional content hashing. No stable model identity, shard grouping, cache, or persistence yet. | Crate (Stage 02) |
 | `ghostram-engine` | Engine adapter contract, build discovery, capability probes, argument mapping, child-process lifecycle, HTTP client. | Crate; runtime initially inside |
-| `ghostram-planner` | Memory estimates, candidate generation, safety budgets, Pareto inputs. | Module first; crate when estimates are non-trivial |
+| `ghostram-planner` | Pure deterministic memory estimates, evidence-tagged quantities, budget comparison, qualified scenarios, and plan JSON. No probing, scanning, engine calls, or persistence. | Crate (Stage 03) |
 | `ghostram-tuner` | Bounded search, experiment scheduling, evaluation against goals. | Later crate |
 | `ghostram-runtime` | Long-lived process supervision if it outgrows the engine adapter. | Later split from engine |
 | `ghostram-store` | Persistence of runs, measurements, model/engine fingerprints. | Module behind a trait; crate when SQLite lands |
@@ -82,28 +83,33 @@ The workspace currently contains exactly:
 
 1. `ghostram-core`
 2. `ghostram-models`
-3. `ghostram-probe`
-4. `ghostram-cli`
+3. `ghostram-planner`
+4. `ghostram-probe`
+5. `ghostram-cli`
 
 `ghostram-engine` follows in Stage 04 when there is a process to supervise.
-`planner`, `tuner`, `store`, and `ui` remain modules or future crates until their
-APIs are stable. This avoids ten crates with placeholder code and circular
-dependency pressure.
+`tuner`, `store`, and `ui` remain modules or future crates until their APIs are
+stable. This avoids empty placeholder crates and circular dependency pressure.
 
 Dependency direction:
 
 ```text
 cli ──► probe
  │       │
- ├──────► engine ──► core
+ ├──────► models ──► core
  │          │
- ├──────► models ───┘
+ │          ▼
+ ├──────► planner
  │          │
- └──────► planner ──► core
-            │
-            ▼
-          store
+ │          ▼
+ └──────► core
+
+engine (Stage 04) ──► core
 ```
+
+The planner takes compact models types as inputs for the plan boundary, but it
+does not call the scanner and does not read a file. The CLI composes inspection,
+planning observations, and the pure planner.
 
 Rules:
 
@@ -113,8 +119,9 @@ Rules:
   `probe`, an engine, or persistence.
 - `engine` may depend on `core`, process/HTTP libraries, and filesystem paths;
   it must not depend on `models` or `planner` types beyond `core` contracts.
-- `planner` is pure and deterministic where possible; it takes metadata and
-  hardware snapshots, returns candidates and estimates.
+- `planner` is pure and deterministic for the same inputs; it takes compact model
+  metadata and hardware snapshots, returns evidence-tagged estimates, and never
+  probes, scans, reads files, calls an engine, or persists state.
 - `cli` and `ui` are adapters; they do not contain domain rules.
 - No crate reads global configuration implicitly. Configuration is passed in.
 
@@ -198,6 +205,10 @@ Examples of capability questions:
 - There is no implicit conversion from `Estimate<T>` to `Measurement<T>`.
 - Reports must label every performance number as `estimated`, `measured`, or
   `unknown`. A measured value without a run manifest is invalid.
+- Stage 03 does not yet define the generic `Estimate<T>` type. It implements a
+  narrower `Evidence<T>` contract for memory quantities, with the six classes in
+  section 4.8. This is not a performance model and does not contain a calibration
+  dataset.
 
 ### 4.5 Errors
 
@@ -247,6 +258,32 @@ Parsed metadata is an observation, not engine acceptance or stable identity. The
 CLI owns presentation and exit codes. The field contract is in
 [MODELS_SCHEMA.md](MODELS_SCHEMA.md), and parser/scan behavior and limits are in
 [GGUF_CATALOG.md](GGUF_CATALOG.md).
+
+### 4.8 Memory plan contract
+
+`ghostram models plan <path>` produces a `ghostram.models.plan/1` envelope
+implemented in `ghostram-planner`. The user selects exactly one regular GGUF file;
+the CLI inspects that file and collects only host memory and NVIDIA device
+observations before calling a pure calculation core. There is no directory scan,
+automatic hash, default model path, persistent plan, cache, or engine call.
+
+The plan reports evidence-tagged quantities rather than bare integers. Evidence
+classes are `observed`, `explicit_input`, `derived`, `estimated`,
+`product_default`, and `unknown`; an unknown quantity has a reason and no numeric
+value. The weight component uses only a low-confidence GGUF file-size proxy. The
+KV component supports one narrow `llama_uniform_full_attention_v1` profile with an
+F16 or F32 cache; special layouts and unsupported architectures produce typed
+unavailability. Runtime and backend workspace remain explicitly unknown.
+
+Budgets subtract configurable reserves from observed availability with checked
+arithmetic and never become negative. The plan contains exactly two scenarios:
+host-resident weights plus KV, and a hypothetical full-device weight placement with
+host KV. Its outcomes are qualified as
+`estimated_components_within_budget`,
+`estimated_components_exceed_budget`, or `insufficient_data`. It never asserts
+that a model fits, loads, launches, is supported, or is safe to run. The complete
+field contract is in [PLAN_SCHEMA.md](PLAN_SCHEMA.md); behavior and formula
+boundaries are in [MEMORY_PLANNER.md](MEMORY_PLANNER.md).
 
 ## 5. Required boundaries
 
@@ -374,17 +411,19 @@ Requirements:
 ## 8. Data flow and persistence
 
 ```text
-probe ──► hardware snapshot ──┐
-                              ├─► plan (later) ──► candidates ──► run (later)
-model scan ──► metadata ──────┘                         │
-                                                       ▼
-                                             measurements (later)
-                                                       │
-                                                       ▼
-                                                 run store (later)
+explicit model file ──► inspect_file ──► compact metadata ──┐
+                                                            ├─► plan (Stage 03)
+memory/NVIDIA probes ──► resource snapshot ─────────────────┘       │
+                                                                  ▼
+                                                    ghostram.models.plan/1
+                                                    (ephemeral; no store)
 
-Stage 02 stops at the ephemeral model-scan metadata envelope. It has no store.
+planner output ──► candidates (later) ──► run (later) ──► measurements (later)
 ```
+
+Stage 02 stops at the ephemeral model-scan metadata envelope and has no store.
+Stage 03 stops at the ephemeral plan envelope. It does not generate candidate
+lists, launch an engine, or persist the plan.
 
 Engine discovery produces installation records, probing produces build identity,
 and capability observations are timestamped against a runtime context. These are
@@ -392,7 +431,7 @@ separate from hardware and model observations and are not collapsed into a singl
 fingerprint. Stage 02's model records contain no stable model identity; a content
 hash is optional and shards are not grouped.
 
-Persistence requirements (planned; not implemented in Stage 02):
+Persistence requirements (planned; not implemented in Stage 03):
 
 - Versioned JSON envelopes with a schema version. Stage 02 defines an envelope but
   does not persist it.
@@ -410,14 +449,26 @@ Persistence requirements (planned; not implemented in Stage 02):
 
 ## 9. Safety governor
 
-The planner and runtime share a resource policy:
+Stage 03 implements the planning half of a resource policy, not the runtime
+governor:
 
-- Preflight uses `MemAvailable` (not `MemFree`), free VRAM, and current pressure.
-- Default reserves are configurable. Initial proposal: 1024 MiB VRAM margin
-  (consistent with llama.cpp's `--fit-target` default) and at least 1536 MiB
-  system RAM margin. These numbers are hypotheses on an 8 GiB laptop and must be
-  calibrated.
-- If predicted usage exceeds the budget, refuse unless the user explicitly
+- The planner uses `MemAvailable` (not `MemFree`), NVIDIA total-minus-used memory
+  (derived free VRAM), and explicit model metadata to produce an estimate.
+- Default reserves are configurable: 1,024 MiB VRAM reserve and 1,536 MiB host
+  reserve. These are conservative product policies on an 8 GiB laptop and must be
+  calibrated; they are not universal requirements.
+- Effective budgets are non-negative checked subtractions. A missing quantity
+  remains unknown and is never treated as zero.
+- Planned component usage above a budget produces
+  `estimated_components_exceed_budget`; unknown inputs produce `insufficient_data`.
+  The planner does not refuse or authorize a launch because Stage 03 has no launch
+  path.
+
+The following runtime behavior remains a later-stage requirement:
+
+- Preflight must use the plan plus current pressure, free VRAM, and runtime
+  overhead. A within-budget plan is not launch approval.
+- If predicted usage exceeds the runtime budget, refuse unless the user explicitly
   overrides with a recorded acknowledgement.
 - During a run, sample memory/VRAM/PSI/swap and stop on sustained pressure or a
   hard threshold. Avoid sampling so frequently that it distorts the measurement.
@@ -449,7 +500,9 @@ the UI must not assume that the first Vulkan adapter is the discrete GPU.
 - `models`: malformed/truncated GGUF fixtures; every metadata type; limit,
   duplicate, endianness, tensor-offset, symlink, filename-hint, traversal, hash,
   and change-detection cases. No shard grouping exists yet.
-- `planner`: property tests for monotonicity and overflow; golden estimates.
+- `planner`: deterministic formula, checked overflow, reserve, boundary, missing
+  metadata, unsupported layout, cache-type, proxy-label, device-uncertainty, and
+  JSON round-trip tests. Monotonicity and real-allocation calibration remain open.
 - `engine`: fake adapter and fake HTTP server; timeout/crash/cleanup tests;
   argument-array snapshots.
 - `store`: round-trip and schema-version tests.
@@ -463,12 +516,17 @@ the UI must not assume that the first Vulkan adapter is the discrete GPU.
    the MVP? (Proposed: both, because they answer different questions.)
 2. Should the engine adapter own process supervision permanently, or split into
    `runtime` once multiple engines exist?
-3. What additional real-model and engine cross-checks are needed before the
-   catalog's metadata is used for engine launch decisions? Stage 02 selected a
-   narrow in-tree parser only for read-only cataloging.
+3. Which real-model and engine cross-checks are required before catalog metadata
+   and planner estimates can inform a launch decision? Stage 03 deliberately
+   produces qualified estimates only.
 4. How should `--fit`-resolved values be recovered reliably across builds?
 5. What is the minimum usable schema for history, and when does SQLite become
    justified?
-6. How should the UI display uncertainty without overwhelming users?
+6. How should the UI display evidence classes and uncertainty without overwhelming
+   users?
 7. Which packaging format best supports Vulkan/CUDA runtime dependencies on
    Linux?
+8. Which additional KV-cache profiles can be supported without guessing at
+   sliding-window, latent, recurrent, per-layer, or quantized layouts?
+9. How much do backend padding, alignment, workspace, and runtime overhead add
+   relative to the Stage 03 weight and KV model on the primary laptop?

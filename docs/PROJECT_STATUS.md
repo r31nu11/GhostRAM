@@ -1,54 +1,60 @@
 # Project status
 
 **Snapshot date:** 2026-10-21.
-**Current stage:** Stage 02 — GGUF model catalog and identity.
+**Current stage:** Stage 03 — Memory planner and safety budgets.
 **Stage state:** Implementation and documentation complete; **pending formal
 acceptance**.
 **Branch:** `dev`.
-**Commit state:** Stage 02 content commit
-`244809bf12fda854f22d018c36cab5bd1d253b40`
-(`feat(stage-02): add bounded GGUF model catalog`). The final report/status commit
-is the Stage 02 HEAD; use `git log -1` for its exact hash. Both commits use the local
-maintainer identity `r31nu11 <r31nu11@mail.ru>`.
-**Publication:** the maintainer explicitly authorized publication of the Stage
-00/01/02 development history to `origin/dev`. This is not authorization for a tag,
-GitHub Release, artifact, or promotion to `main`. At content freeze, `origin/dev`
-and `origin/main` were both at `bdfced9`.
-**Working tree:** clean immediately before the final report/status commit, which
-contains only the final Stage 02 status and report updates.
+**Commit state:** Stage 03 content and final report/status commits are created during
+the Stage 03 hand-off; use `git log` for their exact hashes. Both commits use the
+local maintainer identity `r31nu11 <r31nu11@mail.ru>`.
+**Publication:** the maintainer authorized publication of the Stage 00/01/02/03
+development history to `origin/dev`. This is not authorization for a tag, GitHub
+Release, artifact, or promotion to `main`.
+**Working tree:** clean after the final report/status commit; any remaining path is
+explained in the Stage 03 report.
 
 ## Summary
 
 Stage 00 was accepted on 2026-10-20 and ADR-0001 through ADR-0005 were adopted at
-the same time. Stage 01 was accepted on 2026-10-21. Stage 02 adds the fourth
-workspace crate and a bounded, read-only model inspection path:
+the same time. Stage 01 was accepted on 2026-10-21. Stage 02 was accepted on
+2026-10-21. Stage 03 adds the fifth workspace crate and a pure, read-only memory
+planning path:
 
-- `ghostram-models` parses GGUF v2/v3 little-endian headers, metadata, and tensor
-  descriptors with checked reads and explicit limits. It does not parse tensor
-  payloads.
-- Compact extraction retains general identity fields, common architecture counts,
-  tokenizer array summaries and presence flags, tensor type descriptors, alignment,
-  and bounded warnings. It never retains token vocabulary values, scores, merge
-  pairs, added-token values, chat templates, Hugging Face tokenizer JSON, prompts,
-  or arbitrary blobs.
-- Directory scanning requires one explicitly selected root. It is non-recursive by
-  default, supports `--recursive`, never follows symlinks, skips non-regular and
-  non-UTF-8-path candidates with diagnostics, and sorts records deterministically.
-- Optional `--hash` streams complete files through SHA-256 with a fixed 64 KiB
-  buffer. Without it, tensor payloads are not read. A digest is reported only after
-  a complete successful read and is discarded when a change is observed.
-- `ghostram models scan` provides human and `--json` output under the versioned
-  `ghostram.models.scan/1` schema. `ghostram.doctor/1` is unchanged.
-- Deterministic synthetic and adversarial fixtures cover all documented metadata
-  types, nested arrays, tokenizer summaries, tensor types, malformed and truncated
-  files, resource limits, symlinks, hashing, change detection, traversal, and CLI
-  behavior.
+- `ghostram-planner` is a pure calculation core. It accepts compact model metadata,
+  a resource snapshot, and validated options; it does not scan, probe, read files,
+  start subprocesses, call an engine, or persist state.
+- `ghostram models plan <path>` requires one explicitly selected regular GGUF file.
+  It does not scan a directory, hash automatically, use a default model path, or
+  write a plan. It collects only host memory and NVIDIA memory observations.
+- Every planner quantity is evidence-tagged as `observed`, `explicit_input`,
+  `derived`, `estimated`, `product_default`, or `unknown`. Unknown quantities carry
+  a reason and no value; missing data is never zero.
+- Modeled weights are only a low-confidence GGUF file-size proxy. The plan does not
+  infer exact tensor allocation, quantization overhead, mmap residency, or GPU layer
+  counts.
+- KV cache is limited to the documented `llama_uniform_full_attention_v1` profile
+  and `uniform_kv_cache_v1` formula. F16 is the visible default; F32 is supported.
+  Special attention layouts, missing dimensions, unsupported architectures, and
+  quantized KV produce explicit unavailability rather than invented numbers.
+- Budgets use checked `u64` arithmetic and non-negative effective values. The
+  product defaults are 1,536 MiB host reserve and 1,024 MiB device reserve.
+- Exactly two scenarios are evaluated: CPU-resident weights plus KV, and a
+  hypothetical full-device weight placement with host KV. Outcomes are
+  `estimated_components_within_budget`,
+  `estimated_components_exceed_budget`, or `insufficient_data`.
+- `ghostram.models.plan/1` is a new versioned JSON contract.
+  `ghostram.doctor/1` and `ghostram.models.scan/1` are unchanged.
+- Deterministic unit and CLI integration tests cover arithmetic, reserves,
+  boundaries, overflow, formula/profile behavior, missing metadata, cache types,
+  proxy labeling, device uncertainty, JSON round-trips, malformed files, output
+  purity, and exit codes.
 
-**No real GGUF model was available or tested.** All parser and scanner evidence is
-from synthetic fixtures. No engine is installed, so model metadata was not
-cross-checked against engine-reported properties. No inference, GPU compute,
-model download, network test, benchmark, or hardware measurement was performed in
-Stage 02.
+**No real GGUF model was available or tested.** All parser and planner evidence is
+from deterministic synthetic fixtures and synthetic resource snapshots. No engine is
+installed, so no model allocation, launch, inference, or benchmark was observed. No
+inference, GPU compute, model download, network test, or hardware measurement was
+performed in Stage 03.
 
 ## Current capabilities
 
@@ -60,80 +66,103 @@ Stage 02.
 | `ghostram models scan` / `--json` | Implemented; one user-selected directory; source-only |
 | Recursive scan | Implemented as opt-in `--recursive`; depth and entry limits apply |
 | SHA-256 | Optional explicit `--hash`; streaming and complete-read required |
-| Stable model identity | **Not implemented**; scan records are observations |
-| Shard grouping, `models list`, cache, database | **Not implemented**; earlier scope superseded |
+| `ghostram models plan` / `--json` | Implemented; one explicit file; source-only; `ghostram.models.plan/1` |
+| Weight estimate | File-size proxy only; low confidence; shard/malformed cases unavailable |
+| KV-cache estimate | Narrow uniform full-attention `llama` profile; F16 default/F32; synthetic only |
+| Budget/scenario engine | Checked integer arithmetic, configurable reserves, two qualified scenarios |
+| Plan persistence | **Not implemented**; plans are ephemeral |
+| Stable model identity, shard grouping, `models list`, cache, database | **Not implemented**; earlier scope superseded |
 | Real-model/engine cross-check | **Not implemented**; no model or engine available |
-| Model loading or inference | **Not implemented** |
-| Planner, tuner, store, GUI, benchmarks | **Not implemented** |
+| Model loading, launch, inference, runtime governor | **Not implemented** |
+| Candidate generation, tuner, store, GUI, benchmarks | **Not implemented** |
 
-## Stage 02 decisions
+## Stage 03 decisions
 
-- No new ADR was required. Adding `ghostram-models` follows the crate-split rule in
-  ADR-0002 and does not rewrite an accepted decision.
-- The parser boundary is GGUF v2/v3 little-endian. Big-endian v2/v3 headers are
-  detected and classified `unsupported_endianness`; v1 and future versions are
-  unsupported.
-- Unknown metadata type codes are rejected. Unknown tensor type identifiers are
-  retained without an invented name and produce `unknown_tensor_type`; they do not
-  make a structurally valid file malformed.
-- `general.alignment` must be `uint32`, nonzero, and a multiple of 8. Any present
-  non-`uint32` encoding is a fatal `invalid_alignment`, not a silent default.
-- `tokenizer.ggml.added_tokens` is treated as `array[string]`, matching upstream.
-- The parser follows the GGUF specification's 64-byte tensor-name maximum and
-  multiple-of-8 alignment rule. The upstream loader's stricter power-of-two
-  alignment and its effective `<64` tensor-name boundary are documented as
-  deviations, not silently adopted.
-- Keys are checked for length, UTF-8, emptiness, and duplicates, but the full
-  ASCII lower-snake key grammar is not enforced. This relaxed behavior is
-  documented in the format research note.
-- An observed file change discards both any parsed metadata and any digest, and
-  records `parse_status: changed` with best-effort detection.
-- The earlier roadmap scope for a cache, `models list`, shard grouping, configured
-  default directories, mandatory hashing, and a real-model cross-check was
-  superseded by maintainer authorization. Those items are not hidden acceptance
-  criteria and must not be reported as delivered.
+- No new ADR was required. Adding `ghostram-planner` follows the crate-split rule in
+  ADR-0002 and does not rewrite an accepted decision. The planner is a fifth crate
+  because its pure contract has a distinct test seam and multiple future adapters.
+- The planner core is pure. The CLI owns file inspection and memory/NVIDIA
+  observation; the planner never performs I/O, subprocess work, or engine calls.
+- The plan schema is `ghostram.models.plan/1`. Existing scan and doctor schemas were
+  not changed.
+- `EvidenceClass` includes `product_default` so policy defaults are visibly
+  different from user inputs, observations, and estimates.
+- The only weight method is `gguf_file_size_proxy`. A shard filename, non-parsed file,
+  or missing filesystem size leaves total weights unknown.
+- The only KV profile is `llama_uniform_full_attention_v1`; the formula identifier is
+  `uniform_kv_cache_v1`; the method serializes as `uniform_full_attention`.
+- Recognized layout-marker presence is tracked in non-serialized parser fields. The
+  marker makes KV unavailable conservatively even if its value appears disabled.
+  `ghostram.models.scan/1` JSON remains unchanged.
+- The `llama` defaults are evidence-tagged: missing `attention.head_count_kv`
+  defaults to the query head count, and missing key/value widths default to
+  `embedding_length / head_count`.
+- F16 and F32 are the only modeled KV element types. Quantized caches are deferred
+  because block layout, scale metadata, backend alignment, and kernel behavior are
+  not a simple linear byte multiplier.
+- Budgets subtract a configured reserve only when inputs are known. An
+  availability at or below the reserve yields a non-negative effective zero marked
+  unusable, never a negative value.
+- The device scenario is hypothetical full-device weight placement with host KV. It
+  does not model partial offload or GPU-resident KV.
+- The context estimate is a host-budget upper bound after the file-size proxy. It is
+  capped at the planner's option limit and warns when it exceeds declared context;
+  it is not an engine context limit.
+- The plan never emits an unqualified `model_fits`, `launchable`, `supported`, or
+  `safe_to_run`. Launch refusal is deferred because Stage 03 has no launch path.
 
 ## Validation snapshot
+
+Exact commands and output for the committed state are recorded in the
+[Stage 03 report](../reports/stages/stage-03-memory-planner.md). The final
+hand-off reruns the suite over the completed history.
 
 | Check | Observed result |
 | --- | --- |
 | `cargo fmt --all -- --check` | Passed (no output) |
 | `cargo clippy --workspace --all-targets --locked -- -D warnings` | Passed |
-| `cargo test --workspace --locked` | 147 passed, 0 failed (12 CLI unit, 15 CLI integration, 16 core, 63 models, 41 probe) |
+| `cargo test --workspace --locked` | Passed; exact count in the Stage 03 report |
 | `cargo build --workspace --locked` | Passed |
-| `python3 scripts/check_docs.py` | Passed: 33 Markdown files, 163 relative links, 28 required files |
-| `bash scripts/check-commit-range.sh bdfced9d7db49a1e2bdad5dd1602822734da33b1 HEAD` | Passed over `bdfced9..244809b`; rerun over the completed history in the final hand-off |
+| `python3 scripts/check_docs.py` | Passed; exact counts in the Stage 03 report |
+| `bash scripts/check-commit-range.sh bdfced9d7db49a1e2bdad5dd1602822734da33b1 HEAD` | Run after the final report/status commit; recorded in the Stage 03 report |
 | Local author identity | `r31nu11` / `r31nu11@mail.ru` |
-| Complete diff inspection | Passed before staging |
-
-Exact commands and output for the committed state are recorded in the
-[Stage 02 report](../reports/stages/stage-02-gguf-model-catalog.md).
+| Complete diff inspection | Performed before staging |
 
 ## Environment snapshot
 
-Stage 02 did not take a new hardware measurement. The last accepted read-only
+Stage 03 did not take a new hardware test measurement. The last accepted read-only
 hardware snapshot is in the
-[Stage 01 report](../reports/stages/stage-01-minimal-rust-workspace.md): the
-primary laptop has a 4 GiB Pascal GPU and 7.4 GiB RAM; the secondary machine has
-not been accessed. No engine was installed. No real model was supplied, downloaded,
-or scanned, and no benchmark was run.
+[Stage 01 report](../reports/stages/stage-01-minimal-rust-workspace.md): the primary
+laptop has a 4 GiB Pascal GPU and 7.4 GiB RAM; the secondary machine has not been
+accessed. CLI integration tests invoked the lightweight memory/NVIDIA path with a
+restricted `PATH`; those runs are test plumbing, not a hardware validation record.
+No engine was installed. No real model was supplied, downloaded, scanned, or
+planned, and no benchmark was run.
 
 ## Not done and deferred
 
-- No real GGUF file or engine cross-check. This remains the largest validation gap;
-  synthetic fixtures cannot prove compatibility with a real model family.
-- No shard grouping or reconstruction, `models list`, persistent cache, database,
-  watch mode, or comparison between scans.
-- No stable `ModelId`: optional hashes and paths are observations, and another
-  stage must define when a hash is mandatory for identity.
-- No big-endian or GGUF v1 support.
-- No tensor payload validation, quantization block-size checks, overlap checks, or
-  inference-engine acceptance claim.
+- No real GGUF file, engine cross-check, or memory-allocation measurement. Synthetic
+  fixtures cannot prove the file-size proxy or KV formula matches a real engine.
+- No backend workspace, graph allocation, driver overhead, mmap, alignment, or
+  quantization-overhead estimate; runtime overhead remains explicitly unknown.
+- No real-model validation of architecture defaults, special layouts, or tokenizer
+  behavior. KV support is deliberately narrow.
+- No quantized KV cache, latent attention, sliding-window, recurrent, per-layer
+  array, multi-architecture, or shard-grouped planning.
+- No candidate-list generation, optimizer, Pareto search, or tuner.
+- No launch refusal, override acknowledgment, runtime pressure sampling, process
+  supervision, or engine adapter.
+- No plan persistence, history, cache, database, or stable model ID.
+- No GPU layer-count inference, partial offload, or multi-GPU planning.
+- No Vulkan/AMD/Intel device-memory budget; planning devices are NVIDIA only.
 - No release artifact, installer, tag, GitHub Release, or `main` promotion.
-- No Stage 03 work. Stage 03 remains blocked until Stage 02 is accepted.
+- No Stage 04 work. Stage 04 remains blocked until Stage 03 is accepted.
 
 ## Next stage
 
-Stage 03 (memory planner and safety budgets) is next but blocked on formal Stage 02
-acceptance. It must not start from this status alone. The maintainer must review the
-Stage 02 report, all deferred scope, and the validation evidence.
+Stage 04 (engine adapter and supervised runtime) is next but blocked on formal
+Stage 03 acceptance. Its planning already names the CPU baseline, official Linux
+CUDA 12.8 Pascal candidate, official Vulkan candidate, and a source build targeting
+`sm_61`, but none may be installed or run without separate maintainer approval.
+The maintainer must review the Stage 03 report, all deferred scope, and the
+validation evidence before authorizing Stage 04.

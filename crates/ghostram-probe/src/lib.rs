@@ -11,10 +11,12 @@ mod engine;
 mod memory;
 mod nvidia;
 mod os;
+mod planning;
 mod report;
 mod storage;
 mod tools;
 mod vulkan;
 mod zram;
 
+pub use planning::{PlanningObservations, collect_planning_observations};
 pub use report::collect_report;

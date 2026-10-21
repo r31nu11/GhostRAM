@@ -35,27 +35,34 @@ ADR and propose a superseding ADR with reasons.
   2026-10-20; ADR-0001 through ADR-0005 were adopted at the same time.
 - Stage 01 (minimal Rust workspace and diagnostic spine) was accepted on
   2026-10-21.
-- Stage 02 (GGUF model catalog) is implemented and awaiting formal acceptance. The
-  workspace contains exactly `ghostram-core`, `ghostram-models`, `ghostram-probe`,
-  and `ghostram-cli`, plus `Cargo.toml` and `Cargo.lock`.
+- Stage 02 (GGUF model catalog) was accepted on 2026-10-21.
+- Stage 03 (memory planner and safety budgets) is implemented and awaiting formal
+  acceptance. The workspace contains exactly `ghostram-core`, `ghostram-models`,
+  `ghostram-planner`, `ghostram-probe`, and `ghostram-cli`, plus `Cargo.toml` and
+  `Cargo.lock`.
 - A source-buildable `ghostram` binary provides read-only `doctor`,
-  `doctor --json`, `models scan`, and `models scan --json` commands. There is no
-  release artifact or installer, no installed inference engine, and no engine
-  runtime in this repository. The model catalog is a bounded v2/v3 little-endian
-  metadata parser and scanner, not a loader or inference integration.
+  `doctor --json`, `models scan`, `models scan --json`, `models plan`, and
+  `models plan --json` commands. There is no release artifact or installer, no
+  installed inference engine, and no engine runtime in this repository. The model
+  catalog is a bounded v2/v3 little-endian metadata parser and scanner, not a
+  loader or inference integration. The planner is a pure calculation core, not a
+  launcher, scheduler, or safety proof.
 - Optional SHA-256 reads full files only with explicit `--hash`; without it,
   tensor payloads are not parsed. There is no model cache, database, default path,
-  shard grouping, `models list`, or real-model/engine cross-check.
-- No real GGUF model was available or tested; all model parser evidence is from
-  deterministic synthetic and adversarial fixtures. No benchmark results exist.
-  Never imply that a planned benchmark or real-model validation was executed.
+  shard grouping, `models list`, or real-model/engine cross-check. Plans are
+  ephemeral and are not persisted.
+- No real GGUF model was available or tested; all model parser and planner
+  evidence is from deterministic synthetic and adversarial fixtures. No engine,
+  inference run, GPU allocation, or benchmark was executed. Never imply that a
+  planned benchmark or real-model validation was executed.
 - The primary laptop has a 4 GiB Pascal GPU and 7.4 GiB RAM. The secondary
   machine has not been accessed.
 
 Read [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md) for the volatile snapshot.
 Read the accepted [Stage 00 report](reports/stages/stage-00-technical-reconnaissance.md),
 the accepted [Stage 01 report](reports/stages/stage-01-minimal-rust-workspace.md),
-and the pending [Stage 02 report](reports/stages/stage-02-gguf-model-catalog.md) for
+the accepted [Stage 02 report](reports/stages/stage-02-gguf-model-catalog.md), and
+the pending [Stage 03 report](reports/stages/stage-03-memory-planner.md) for
 evidence and validation.
 
 ## Hard rules
@@ -64,8 +71,9 @@ evidence and validation.
   development to `main`.
 - `main` receives only maintainer-accepted, working/stable checkpoints. Promotion
   from `dev` to `main` requires maintainer acceptance and applicable validation.
-- Do not push, create a GitHub repository, or change remotes. Pushes are never
-  automatic.
+- Do not push, create a GitHub repository, or change remotes without explicit
+  maintainer approval for that delivery. Pushes are never automatic, and stage
+  completion does not authorize one.
 - Tags and GitHub Releases require **separate explicit maintainer approval**.
   Stage acceptance or a merge to `main` does not authorize either. A
   documentation-only stage is not a stable application release.
@@ -91,7 +99,8 @@ evidence and validation.
 | `Cargo.toml`, `Cargo.lock` | Rust workspace definition and locked dependency graph. |
 | `crates/ghostram-core` | Engine-independent contracts, quantities, errors, time formatting, and report models. |
 | `crates/ghostram-models` | Bounded read-only GGUF metadata parsing, model scanning, and optional streaming SHA-256. |
-| `crates/ghostram-probe` | Read-only Linux diagnostics and bounded subprocess execution. |
+| `crates/ghostram-planner` | Pure deterministic weight/KV estimates, evidence classes, budgets, and qualified scenarios. |
+| `crates/ghostram-probe` | Read-only Linux diagnostics, planning observations, and bounded subprocess execution. |
 | `crates/ghostram-cli` | `ghostram` command line, human output, and JSON output. |
 | `docs/PROJECT_CHARTER.md` | Stable mission, MVP, non-goals, success criteria. |
 | `docs/PROJECT_STATUS.md` | Volatile current state; update every stage. |
@@ -100,6 +109,8 @@ evidence and validation.
 | `docs/DOCTOR_SCHEMA.md` | Versioned `ghostram.doctor/1` JSON contract. |
 | `docs/GGUF_CATALOG.md` | Read-only GGUF parser/scanning behavior, limits, and non-claims. |
 | `docs/MODELS_SCHEMA.md` | Versioned `ghostram.models.scan/1` JSON contract. |
+| `docs/MEMORY_PLANNER.md` | Pure planner boundary, evidence classes, KV formula/profile, reserves, scenarios, and non-claims. |
+| `docs/PLAN_SCHEMA.md` | Versioned `ghostram.models.plan/1` JSON contract. |
 | `docs/ENGINE_SUPPORT.md` | Engine/backend compatibility matrix and confidence. |
 | `docs/BENCHMARKING.md` | Measurement and reporting methodology. |
 | `docs/TESTING.md` | Current checks and planned test strategy. |
@@ -131,7 +142,7 @@ evidence and validation.
 
 ## Validation
 
-Current Stage 02 checks:
+Current Stage 03 checks:
 
 ```sh
 cargo fmt --all -- --check

@@ -1,7 +1,8 @@
 # Model scan schema
 
-**Status:** Implemented in Stage 02; source-only and pending formal acceptance.
-There is no release artifact or installer.
+**Status:** Implemented in Stage 02 and accepted on 2026-10-21; source-only.
+The Stage 03 planner does not change this schema. There is no release artifact or
+installer.
 **Schema identifier:** `ghostram.models.scan/1`.
 **Implementation:** `crates/ghostram-models/src/catalog.rs` and
 `crates/ghostram-models/src/scan.rs`.

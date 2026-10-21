@@ -3,7 +3,7 @@
 **Date:** 2026-10-21
 **Maintainer:** `r31nu11` (project maintainer)
 **Branch:** `dev`
-**Status:** Complete, pending formal acceptance
+**Status:** Accepted on 2026-10-21 (implementation complete and evidence retained).
 **Content commit:** `244809bf12fda854f22d018c36cab5bd1d253b40`
 (`feat(stage-02): add bounded GGUF model catalog`).
 
@@ -12,7 +12,9 @@
 Stage 02 is **“GGUF model catalog and identity”** from
 [the roadmap](../../docs/ROADMAP.md). It was explicitly authorized after Stage 01
 acceptance. This report records the implementation, evidence, limitations, and
-review state; it does not accept the stage or start Stage 03.
+review state. The maintainer accepted Stage 02 on 2026-10-21 and separately
+authorized Stage 03; the original pending-review text is retained only where it
+describes the state at authoring time.
 
 ## 2. Objectives and acceptance criteria
 

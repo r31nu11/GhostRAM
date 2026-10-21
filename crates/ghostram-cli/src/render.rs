@@ -11,6 +11,9 @@ use ghostram_models::{
     MetadataValueType, ModelMetadata, ModelsScanEnvelope, ParseStatus, Provenance, ScanState,
     WarningCode,
 };
+use ghostram_planner::{
+    BudgetComparison, Evidence, KvCacheComponent, PlanEnvelope, Scenario, WeightComponent,
+};
 
 /// Renders a complete human-readable diagnostic report.
 #[must_use]
@@ -176,6 +179,404 @@ pub fn render_models_scan(envelope: &ModelsScanEnvelope) -> String {
     }
 
     output
+}
+
+/// Renders a complete human-readable memory plan.
+#[must_use]
+pub fn render_plan(envelope: &PlanEnvelope) -> String {
+    let mut output = String::new();
+    let plan = &envelope.plan;
+    let model = &plan.model;
+
+    let _ = writeln!(output, "GhostRAM memory plan");
+    let _ = writeln!(output, "Application: {}", envelope.application_version);
+    let _ = writeln!(output, "Schema: {}", envelope.schema_version);
+    let _ = writeln!(output, "Generated: {}", envelope.generated_at);
+    let _ = writeln!(output, "Model: {}", display_text(&model.path, 500));
+    let _ = writeln!(output, "Parse: {}", parse_status_name(model.parse_status));
+    if let Some(state) = model.metadata_state {
+        let _ = writeln!(output, "Metadata: {}", metadata_state_name(state));
+    }
+    if let Some(architecture) = &model.architecture {
+        let _ = writeln!(
+            output,
+            "Architecture: {} ({})",
+            display_text(&architecture.value, 200),
+            provenance_name(architecture.source)
+        );
+    }
+    if let Some(name) = &model.name {
+        let _ = writeln!(output, "Name: {}", display_text(&name.value, 300));
+    }
+    if let Some(quantization) = &model.quantization {
+        let _ = writeln!(
+            output,
+            "Quantization: {} ({})",
+            display_text(&quantization.value, 200),
+            provenance_name(quantization.source)
+        );
+    }
+    let _ = writeln!(output, "File size: {}", evidence_text(&model.file_size));
+    if let Some(context) = &model.declared_context_tokens {
+        let _ = writeln!(
+            output,
+            "Declared context: {} tokens ({})",
+            context.value,
+            provenance_name(context.source)
+        );
+    }
+    if let Some(failure) = &model.failure {
+        let _ = writeln!(
+            output,
+            "Failure: {}: {}",
+            failure_kind_name(failure.kind),
+            display_text(&failure.message, 500)
+        );
+    }
+    if !model.metadata_warnings.is_empty() {
+        let _ = writeln!(output, "Metadata warnings:");
+        const HUMAN_WARNING_LIMIT: usize = 10;
+        for warning in model.metadata_warnings.iter().take(HUMAN_WARNING_LIMIT) {
+            let _ = writeln!(
+                output,
+                "  [{}] {}",
+                warning_code_name(warning.code),
+                display_text(&warning.message, 400)
+            );
+        }
+        if model.metadata_warnings.len() > HUMAN_WARNING_LIMIT {
+            let omitted = model.metadata_warnings.len() - HUMAN_WARNING_LIMIT;
+            let _ = writeln!(
+                output,
+                "  {omitted} additional metadata warnings omitted; use --json for all"
+            );
+        }
+    }
+    output.push('\n');
+
+    let options = &plan.options;
+    let _ = writeln!(output, "Options");
+    let _ = writeln!(
+        output,
+        "  context: {} tokens ({})",
+        option_value(&options.context_tokens),
+        evidence_detail(&options.context_tokens)
+    );
+    let _ = writeln!(
+        output,
+        "  sequences: {} ({})",
+        option_value(&options.sequences),
+        evidence_detail(&options.sequences)
+    );
+    let _ = writeln!(
+        output,
+        "  KV cache: {} ({})",
+        options
+            .kv_cache_type
+            .value()
+            .map_or_else(|| "unknown".to_string(), |value| value.as_str().to_string()),
+        evidence_detail(&options.kv_cache_type)
+    );
+    let _ = writeln!(
+        output,
+        "  RAM reserve: {}",
+        evidence_text(&options.ram_reserve)
+    );
+    let _ = writeln!(
+        output,
+        "  VRAM reserve: {}",
+        evidence_text(&options.vram_reserve)
+    );
+    let _ = writeln!(
+        output,
+        "  device selection: {}",
+        device_selection_text(options.device_selection)
+    );
+    output.push('\n');
+
+    let _ = writeln!(output, "Components (estimates, not measurements)");
+    write_weight_component(&mut output, &plan.components.model_weights);
+    write_kv_component(&mut output, &plan.components.kv_cache);
+    let _ = writeln!(
+        output,
+        "  runtime overhead: {}",
+        evidence_text(&plan.components.runtime_overhead)
+    );
+    output.push('\n');
+
+    let _ = writeln!(output, "Resources");
+    let _ = writeln!(
+        output,
+        "  host memory: {}",
+        state_name(plan.resources.host.state.state)
+    );
+    if let Some(reason) = &plan.resources.host.state.reason {
+        let _ = writeln!(output, "    reason: {}", display_text(reason, 400));
+    }
+    let _ = writeln!(
+        output,
+        "    total: {}",
+        evidence_text(&plan.resources.host.total)
+    );
+    let _ = writeln!(
+        output,
+        "    available: {}",
+        evidence_text(&plan.resources.host.available)
+    );
+    let _ = writeln!(
+        output,
+        "  NVIDIA devices: {}",
+        state_name(plan.resources.devices_state.state)
+    );
+    if let Some(reason) = &plan.resources.devices_state.reason {
+        let _ = writeln!(output, "    reason: {}", display_text(reason, 400));
+    }
+    if plan.resources.devices.is_empty() {
+        let _ = writeln!(output, "    none observed");
+    }
+    for device in &plan.resources.devices {
+        let _ = writeln!(
+            output,
+            "    [{}] {}",
+            device.index,
+            display_text(&device.name, 200)
+        );
+        if let Some(driver) = &device.driver_version {
+            let _ = writeln!(output, "      driver: {driver}");
+        }
+        if let Some(compute) = &device.compute_capability {
+            let _ = writeln!(output, "      compute capability: {compute}");
+        }
+        let _ = writeln!(output, "      total: {}", evidence_text(&device.total));
+        let _ = writeln!(output, "      used: {}", evidence_text(&device.used));
+        let _ = writeln!(output, "      free: {}", evidence_text(&device.free));
+    }
+    let _ = writeln!(
+        output,
+        "  selected device: {}",
+        plan.selected_device_index
+            .map_or_else(|| "none".to_string(), |index| index.to_string())
+    );
+    output.push('\n');
+
+    let _ = writeln!(output, "Scenarios");
+    for scenario in &plan.scenarios {
+        write_scenario(&mut output, scenario);
+    }
+
+    let context = &plan.context_estimate;
+    let _ = writeln!(output, "Context upper bound");
+    let _ = writeln!(
+        output,
+        "  estimate: {} tokens ({})",
+        option_value(&context.estimate),
+        evidence_detail(&context.estimate)
+    );
+    let _ = writeln!(output, "  method: {}", context.method.as_str());
+    let _ = writeln!(
+        output,
+        "  capped at planner limit: {}",
+        yes_no(context.capped_at_limit)
+    );
+    if let Some(note) = &context.note {
+        let _ = writeln!(output, "  note: {}", display_text(note, 400));
+    }
+    output.push('\n');
+
+    if !plan.unknowns.is_empty() {
+        let _ = writeln!(output, "Unknowns");
+        for unknown in &plan.unknowns {
+            let _ = writeln!(
+                output,
+                "  {}: {}",
+                unknown.code.as_str(),
+                display_text(&unknown.description, 500)
+            );
+        }
+        output.push('\n');
+    }
+
+    if !plan.warnings.is_empty() {
+        let _ = writeln!(output, "Warnings");
+        for warning in &plan.warnings {
+            let _ = writeln!(
+                output,
+                "  {}: {}",
+                warning.code.as_str(),
+                display_text(&warning.message, 500)
+            );
+        }
+        output.push('\n');
+    }
+
+    let _ = writeln!(output, "Caveats");
+    for caveat in &plan.caveats {
+        let _ = writeln!(output, "  - {}", display_text(caveat, 500));
+    }
+
+    output
+}
+
+fn write_weight_component(output: &mut String, component: &WeightComponent) {
+    let _ = writeln!(
+        output,
+        "  model weights: {}",
+        evidence_text(&component.estimate)
+    );
+    let _ = writeln!(output, "    basis: {}", evidence_text(&component.basis));
+    let _ = writeln!(output, "    method: {}", component.method.as_str());
+}
+
+fn write_kv_component(output: &mut String, component: &KvCacheComponent) {
+    let _ = writeln!(output, "  KV cache: {}", evidence_text(&component.estimate));
+    let _ = writeln!(output, "    method: {}", component.method.as_str());
+    if let Some(profile) = &component.profile {
+        let _ = writeln!(output, "    profile: {profile}");
+    }
+    if let Some(dimensions) = component.dimensions() {
+        let _ = writeln!(
+            output,
+            "    context: {} tokens per sequence",
+            dimensions.context_tokens
+        );
+        let _ = writeln!(output, "    sequences: {}", dimensions.sequences);
+        let _ = writeln!(
+            output,
+            "    layers: {} ({})",
+            dimensions.layers.value,
+            provenance_name(dimensions.layers.source)
+        );
+        let _ = writeln!(
+            output,
+            "    query heads: {} ({})",
+            dimensions.head_count.value,
+            provenance_name(dimensions.head_count.source)
+        );
+        let _ = writeln!(
+            output,
+            "    KV heads: {} ({})",
+            dimensions.kv_heads.value,
+            provenance_name(dimensions.kv_heads.source)
+        );
+        let _ = writeln!(
+            output,
+            "    key width: {} elements ({})",
+            dimensions.key_dimension.value,
+            provenance_name(dimensions.key_dimension.source)
+        );
+        let _ = writeln!(
+            output,
+            "    value width: {} elements ({})",
+            dimensions.value_dimension.value,
+            provenance_name(dimensions.value_dimension.source)
+        );
+        let _ = writeln!(output, "    cache type: {}", dimensions.cache_type.as_str());
+        let _ = writeln!(output, "    K+V elements: {}", dimensions.elements);
+        if let Some(per_token) = dimensions.per_token_bytes() {
+            let _ = writeln!(
+                output,
+                "    bytes per context token: {}",
+                Bytes::new(per_token)
+            );
+        } else {
+            let _ = writeln!(output, "    bytes per context token: unknown (overflow)");
+        }
+    }
+    if let Some(unavailable) = &component.unavailable {
+        let _ = writeln!(
+            output,
+            "    unavailable [{}]: {}",
+            unavailable.code.as_str(),
+            display_text(&unavailable.message, 500)
+        );
+    }
+}
+
+fn write_scenario(output: &mut String, scenario: &Scenario) {
+    let _ = writeln!(output, "  {}", scenario.id.as_str());
+    let _ = writeln!(output, "    description: {}", scenario.description);
+    if let Some(host) = &scenario.host {
+        write_comparison(output, "host", host);
+    }
+    if let Some(device) = &scenario.device {
+        write_comparison(output, "device", device);
+    }
+    let _ = writeln!(output, "    outcome: {}", scenario.outcome.as_str());
+    for reason in &scenario.reasons {
+        let _ = writeln!(output, "    reason: {}", display_text(reason, 500));
+    }
+    for caveat in &scenario.caveats {
+        let _ = writeln!(output, "    caveat: {}", display_text(caveat, 500));
+    }
+}
+
+fn write_comparison(output: &mut String, label: &str, comparison: &BudgetComparison) {
+    let _ = writeln!(output, "    {label} budget:");
+    let _ = writeln!(
+        output,
+        "      available: {}",
+        evidence_text(&comparison.budget.available)
+    );
+    let _ = writeln!(
+        output,
+        "      reserve: {}",
+        evidence_text(&comparison.budget.reserve)
+    );
+    let _ = writeln!(
+        output,
+        "      effective: {}",
+        evidence_text(&comparison.budget.effective)
+    );
+    let _ = writeln!(
+        output,
+        "      modeled components: {}",
+        evidence_text(&comparison.estimated_components)
+    );
+    let _ = writeln!(
+        output,
+        "      within budget: {}",
+        comparison
+            .within_budget
+            .map_or("unknown", |value| yes_no(value))
+    );
+    if let Some(headroom) = &comparison.headroom {
+        let _ = writeln!(output, "      headroom: {}", evidence_text(headroom));
+    }
+    if let Some(shortfall) = &comparison.shortfall {
+        let _ = writeln!(output, "      shortfall: {}", evidence_text(shortfall));
+    }
+    if let Some(reason) = &comparison.budget.reason {
+        let _ = writeln!(output, "      budget reason: {}", display_text(reason, 400));
+    }
+}
+
+fn evidence_text<T: std::fmt::Display>(evidence: &Evidence<T>) -> String {
+    match evidence.value() {
+        Some(value) => format!("{value} ({})", evidence_detail(evidence)),
+        None => format!("unknown ({})", evidence_detail(evidence)),
+    }
+}
+
+fn evidence_detail<T>(evidence: &Evidence<T>) -> String {
+    let suffix = evidence.reason().map_or_else(String::new, |reason| {
+        format!(": {}", display_text(reason, 300))
+    });
+    format!("{}{suffix}", evidence.class().as_str())
+}
+
+fn option_value<T: std::fmt::Display>(evidence: &Evidence<T>) -> String {
+    evidence
+        .value()
+        .map_or_else(|| "unknown".to_string(), ToString::to_string)
+}
+
+fn device_selection_text(selection: ghostram_planner::DeviceSelection) -> String {
+    match selection {
+        ghostram_planner::DeviceSelection::FirstObserved => "first observed".to_string(),
+        ghostram_planner::DeviceSelection::Explicit { index } => {
+            format!("explicit index {index}")
+        }
+    }
 }
 
 fn write_catalog_file(output: &mut String, file: &FileCatalogEntry) {

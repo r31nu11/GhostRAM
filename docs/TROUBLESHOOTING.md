@@ -1,9 +1,9 @@
 # Troubleshooting
 
-**Status:** Stage 02 source-only diagnostics. `ghostram doctor` and
-`ghostram models scan` exist, but there is no release or installer. This page
-records the diagnostic commands, known environment constraints, and behavior that
-later stages must explain.
+**Status:** Stage 03 source-only diagnostics. `ghostram doctor`,
+`ghostram models scan`, and `ghostram models plan` exist, but there is no release or
+installer. This page records the diagnostic commands, known environment
+constraints, and behavior that later stages must explain.
 
 ## 1. First check: is this a GhostRAM problem?
 
@@ -89,7 +89,41 @@ root is a command failure, not a partial scan. A path beginning with `-` needs t
 [MODELS_SCHEMA.md](MODELS_SCHEMA.md); limits are in
 [GGUF_CATALOG.md](GGUF_CATALOG.md).
 
-## 4. Known constraints on the development laptop
+## 4. GhostRAM memory plan diagnostics
+
+The planner requires one explicit GGUF file:
+
+```sh
+cargo run -p ghostram-cli -- models plan /path/to/model.gguf
+cargo run -p ghostram-cli -- models plan /path/to/model.gguf --json
+```
+
+It is read-only, does not hash the file, and does not scan the parent directory.
+It observes host memory and NVIDIA device memory for this invocation. Exit code 0
+means a plan envelope was produced, including a partial plan with unknown
+quantities. Exit code 2 means the invocation or option value was invalid. Exit code
+1 means the selected path could not be selected safely or output failed.
+
+| Observation | Meaning and action |
+| --- | --- |
+| `parse_status: malformed` or `unsupported` | The file remains observable but weights and KV are unavailable. Select a supported GGUF v2/v3 little-endian file; do not assume an engine will accept it. |
+| `insufficient_data` | At least one required observation, estimate, or device is unknown. Read `unknowns`, `warnings`, and the scenario reasons. This is not a fit result. |
+| `estimated_components_exceed_budget` | The modeled weights and/or KV exceed an effective budget. Reduce context, sequences, or model size, or adjust policy reserves deliberately. Runtime overhead is still excluded. |
+| `estimated_components_within_budget` | Only the modeled components are within budget. Launch success, engine support, backend workspace, and runtime overhead remain unverified. |
+| `kv_cache_unavailable` / `unsupported_attention_layout` | The narrow uniform `llama` profile is not applicable, or a recognized special layout is present. No KV number is invented. |
+| `device_weights_cpu_kv` is `insufficient_data` | No NVIDIA device was selected or observed. This does not prove that no GPU exists; check `ghostram doctor` and `nvidia-smi`. |
+| An explicit `--device N` is missing | The requested index was not observed. Run `ghostram doctor` or `nvidia-smi -L` and use a reported index. |
+| `--kv-cache q8_0` is rejected | Only F16 and F32 are modeled. Quantized KV is not a simple linear divisor and is deferred. |
+| `context estimate` is huge or capped | It is a budget upper bound after the file-size proxy, not a recommendation or engine limit. Check declared context and warnings. |
+| The file-size proxy looks too small | It is only the GGUF file size. It does not model tensor allocation, quantization overhead, alignment, mmap, or GPU layer placement. |
+| A directory or symlink is rejected | Select one real regular file. The planner never selects automatically or follows a symlink. |
+
+`--context` accepts 1 to 1,048,576 tokens and `--sequences` accepts 1 to 256.
+Reserve options are non-negative MiB values. The full contract is in
+[PLAN_SCHEMA.md](PLAN_SCHEMA.md); planner limits and evidence rules are in
+[MEMORY_PLANNER.md](MEMORY_PLANNER.md).
+
+## 5. Known constraints on the development laptop
 
 These observations were made on 2026-10-20 and may change:
 
@@ -103,7 +137,7 @@ These observations were made on 2026-10-20 and may change:
 | No engine is found | No llama.cpp, Ollama, or other engine was installed. | Engine installation is a future, explicit step. Stage 01 did not install one. |
 | `cmake`, `ninja`, or `nvcc` is missing | The development toolchain is not installed. | Building an engine locally requires explicit maintainer approval and additional packages. End users will not need a compiler for GhostRAM. |
 
-## 5. Safe diagnostics
+## 6. Safe diagnostics
 
 The following commands are read-only and exist on a typical Linux system. They
 diagnose the machine, not GhostRAM. Run only what is available; missing tools are
@@ -138,7 +172,7 @@ Do not run commands as root to "fix" a GhostRAM issue. Do not change the driver,
 governor, or clocks as a first response. Record the output and the exact engine
 build before changing anything.
 
-## 6. Interpreting common engine failures (future)
+## 7. Interpreting common engine failures (future)
 
 GhostRAM should eventually classify errors instead of dumping raw logs:
 
@@ -156,7 +190,7 @@ GhostRAM should eventually classify errors instead of dumping raw logs:
 
 These categories are design requirements, not implemented behavior.
 
-## 7. Reporting a problem
+## 8. Reporting a problem
 
 Once the project has a public issue tracker and a release, a useful report
 includes:
@@ -172,12 +206,17 @@ includes:
 Do not include API keys, tokens, private prompts, or model files. For security
 vulnerabilities, follow [SECURITY.md](../SECURITY.md), not a public issue.
 
-## 8. Current limitations
+## 9. Current limitations
 
-- There is no GhostRAM release or installer; only source-built diagnostic and
-  model-scan commands exist.
+- There is no GhostRAM release or installer; only source-built diagnostic,
+  model-scan, and memory-plan commands exist.
 - The model scan is a point-in-time observation with no cache, persistent catalog,
   shard grouping, or engine cross-check.
+- The planner uses synthetic-test evidence only; it has not compared its file-size
+  proxy or KV formula with a real model, engine allocation, backend workspace, or
+  runtime overhead.
+- Plans are ephemeral, limited to two scenarios and one narrow KV profile, and
+  cannot refuse or authorize a launch because no launch path exists.
 - No ecosystem parser was audited and no real GGUF model was tested by the project.
 - No persistent logs or automatic diagnostic bundle exist.
 - No telemetry is collected.
