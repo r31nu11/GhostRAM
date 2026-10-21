@@ -6,8 +6,12 @@
 **Status:** Complete, pending formal acceptance
 **Content commit:** `2dda210a28f88bee4dc6c2538db9224ca1cdb5d6`
 (`feat(planner): add deterministic memory planning`).
-**Final report/status commit:** the descendant `docs(stage-03)` commit; use
-`git log -1` at hand-off.
+**Final Stage 03 report/status commit:** `f2cff44abcbf5dadf421b12087c36d6631fd7829`
+(`docs(stage-03): record validation and content commit`).
+**Publication:** the Stage 03 history was published to `origin/dev`; the initial
+local and remote HEAD was verified at `f2cff44abcbf5dadf421b12087c36d6631fd7829`.
+A later documentation-only consistency correction is the current local HEAD; its
+exact hash and the verified remote equality are recorded in the terminal hand-off.
 
 ## 1. Stage identifier and title
 
@@ -100,7 +104,7 @@ accepted decision was rewritten.
 | Use only a file-size weight proxy. | No tensor allocation or quantization model was available. The proxy is honest about its low confidence and refuses shard totals. |
 | Support one KV profile. | Upstream layouts are too varied for a safe generic formula without a loader. Special markers and unsupported architectures become typed unavailable. |
 | Track marker presence without serializing it. | Stage 03 needs to detect special layouts, while Stage 02's `ghostram.models.scan/1` contract must remain unchanged. |
-| Use F16 default and explicit F32. | F16 is upstream server default and the conservative visible policy; F32 is a simple exact alternative. Quantized cache modeling is deferred. |
+| Use F16 default and explicit F32. | F16 is the planner's visible product-default assumption, consistent with the current documented llama.cpp server default; it is not a guaranteed runtime configuration or an upper-bound memory estimate. F32 is a simple exact alternative. Quantized cache modeling is deferred. |
 | Use non-negative budgets and qualified outcomes. | Missing data cannot become zero, and a modeled comparison cannot become a launch verdict. |
 | Keep plan JSON at `ghostram.models.plan/1`. | It is a separate contract from doctor and scan, with additive-compatible fields and explicit unknown objects. |
 | Defer launch refusal and runtime pressure control. | There is no engine process to govern in Stage 03. Adding a fake refusal rule would not make a launch safe. |
@@ -332,12 +336,21 @@ Unresolved questions:
 ## 11. Current branch and commit hash
 
 - Branch: `dev`.
-- Content commit: `2dda210a28f88bee4dc6c2538db9224ca1cdb5d6`.
-- Final report/status commit: the next `docs(stage-03)` commit. Its hash is
-  self-referential here; use `git log -1` after hand-off.
-- Both commits use the maintainer identity `r31nu11 <r31nu11@mail.ru>`.
-- The commits are local until the final hand-off pushes `dev` to `origin/dev`.
-- No tag, GitHub Release, artifact, or `main` promotion is created.
+- Stage 03 content commit: `2dda210a28f88bee4dc6c2538db9224ca1cdb5d6`.
+- Final Stage 03 report/status commit:
+  `f2cff44abcbf5dadf421b12087c36d6631fd7829`.
+- Initial published local and `origin/dev` HEAD:
+  `f2cff44abcbf5dadf421b12087c36d6631fd7829`.
+- Current local HEAD: the documentation-only consistency correction that contains
+  this report. Its exact hash is recorded in the terminal hand-off rather than
+  embedded in the commit it identifies.
+- The correction is published only as a fast-forward. The terminal hand-off records
+  the verified `origin/dev` hash and its equality with current local HEAD.
+- Both original Stage 03 commits use the maintainer identity
+  `r31nu11 <r31nu11@mail.ru>`.
+- `main` and `origin/main` remain at
+  `bdfced9d7db49a1e2bdad5dd1602822734da33b1`. No tag, GitHub Release, artifact, or
+  `main` promotion is created.
 
 ## 12. Git working-tree status
 
@@ -345,9 +358,9 @@ At content-commit staging, `git status --short` contained only the Stage 03 code
 test, documentation, policy, schema, research, and report additions/modifications.
 The content commit contains those paths. Build output under `target/` is ignored.
 
-After the final report/status commit, the working tree is expected to be clean.
-The final hand-off verifies `git status --short` and reports the observed result
-outside the self-referential commit.
+The initial Stage 03 hand-off left the working tree clean. The documentation
+correction hand-off verifies `git status --short` again; the observed status and
+the exact commit/remote hashes are reported in the terminal hand-off.
 
 ## 13. Documentation updated
 

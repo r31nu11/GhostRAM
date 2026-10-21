@@ -195,10 +195,14 @@ elements = context_tokens * layers * kv_heads
 bytes    = elements * bytes_per_element
 ```
 
-`F16` uses 2 bytes per element and `F32` uses 4. All multiplications and additions
-are checked `u64` operations. The plan records the context, sequence count,
-layers, query heads, KV heads, key/value widths, cache type, and total elements
-when available. Human output also displays the derived per-token bytes.
+`F16` uses 2 bytes per element and `F32` uses 4. F16 is the planner's visible
+product-default assumption, consistent with the current documented llama.cpp
+server default. It is not a guaranteed runtime configuration and is not an
+upper-bound estimate of runtime memory; runtime and backend overhead remain
+unmodeled, and F32 is available explicitly. All multiplications and additions are
+checked `u64` operations. The plan records the context, sequence count, layers,
+query heads, KV heads, key/value widths, cache type, and total elements when
+available. Human output also displays the derived per-token bytes.
 
 The estimate assumes uniform full attention on every modeled layer. It does not
 model:

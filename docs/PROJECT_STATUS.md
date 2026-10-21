@@ -6,14 +6,18 @@
 acceptance**.
 **Branch:** `dev`.
 **Commit state:** Stage 03 content commit
-`2dda210a28f88bee4dc6c2538db9224ca1cdb5d6`; the final report/status commit is its
-descendant and is identified with `git log -1` after hand-off. Both commits use the
-local maintainer identity `r31nu11 <r31nu11@mail.ru>`.
-**Publication:** the maintainer authorized publication of the Stage 00/01/02/03
-development history to `origin/dev`. This is not authorization for a tag, GitHub
-Release, artifact, or promotion to `main`.
-**Working tree:** clean after the final report/status commit; any remaining path is
-explained in the Stage 03 report.
+`2dda210a28f88bee4dc6c2538db9224ca1cdb5d6`; final Stage 03 report/status commit
+`f2cff44abcbf5dadf421b12087c36d6631fd7829`. A documentation-only consistency
+correction is the current local HEAD; its exact hash is recorded in the terminal
+hand-off. All use the local maintainer identity `r31nu11 <r31nu11@mail.ru>`.
+**Publication:** the Stage 00/01/02/03 development history was published to
+`origin/dev`. The initial Stage 03 hand-off verified local HEAD and `origin/dev` at
+`f2cff44abcbf5dadf421b12087c36d6631fd7829`; the correction is published as a
+fast-forward and verified at hand-off. `main` and `origin/main` remain at
+`bdfced9d7db49a1e2bdad5dd1602822734da33b1`. No tag, GitHub Release, artifact, or
+`main` promotion exists.
+**Working tree:** clean after the documentation correction commit; any remaining
+path is explained in the Stage 03 report.
 
 ## Summary
 
@@ -35,9 +39,12 @@ planning path:
   infer exact tensor allocation, quantization overhead, mmap residency, or GPU layer
   counts.
 - KV cache is limited to the documented `llama_uniform_full_attention_v1` profile
-  and `uniform_kv_cache_v1` formula. F16 is the visible default; F32 is supported.
-  Special attention layouts, missing dimensions, unsupported architectures, and
-  quantized KV produce explicit unavailability rather than invented numbers.
+  and `uniform_kv_cache_v1` formula. F16 is the visible product-default assumption,
+  consistent with the current documented llama.cpp server default; it is not a
+  guaranteed runtime configuration or a runtime-memory upper bound. F32 is
+  supported explicitly. Special attention layouts, missing dimensions, unsupported
+  architectures, and quantized KV produce explicit unavailability rather than
+  invented numbers.
 - Budgets use checked `u64` arithmetic and non-negative effective values. The
   product defaults are 1,536 MiB host reserve and 1,024 MiB device reserve.
 - Exactly two scenarios are evaluated: CPU-resident weights plus KV, and a
@@ -114,9 +121,10 @@ performed in Stage 03.
 
 ## Validation snapshot
 
-Exact commands and output for the committed state are recorded in the
-[Stage 03 report](../reports/stages/stage-03-memory-planner.md). The final
-hand-off reruns the suite over the completed history.
+Exact commands and output for the Stage 03 code state are recorded in the
+[Stage 03 report](../reports/stages/stage-03-memory-planner.md). The later
+documentation-only correction changes no code or tests; its hand-off reruns the
+documentation, diff, identity, and commit-range checks over the completed history.
 
 | Check | Observed result |
 | --- | --- |
@@ -125,7 +133,7 @@ hand-off reruns the suite over the completed history.
 | `cargo test --workspace --locked` | Passed; exact count in the Stage 03 report |
 | `cargo build --workspace --locked` | Passed |
 | `python3 scripts/check_docs.py` | Passed; exact counts in the Stage 03 report |
-| `bash scripts/check-commit-range.sh bdfced9d7db49a1e2bdad5dd1602822734da33b1 HEAD` | Passed at the Stage 03 content commit; rerun over the final HEAD during hand-off and reported outside the self-referential commit |
+| `bash scripts/check-commit-range.sh bdfced9d7db49a1e2bdad5dd1602822734da33b1 HEAD` | Passed before the documentation correction; rerun over the final correction HEAD during hand-off and reported outside the self-referential commit |
 | Local author identity | `r31nu11` / `r31nu11@mail.ru` |
 | Complete diff inspection | Performed before staging |
 

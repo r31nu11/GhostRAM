@@ -212,10 +212,11 @@ run GPU tests or download engines or models.
 The current workflow (`.github/workflows/quality.yml`) runs documentation checks,
 commit-range checks, and a Rust job with formatting, Clippy, tests, and a locked
 build. At Stage 03 authoring time the workflow had been parsed locally but had not
-executed on GitHub Actions; a later authorized publication may trigger it. CI
-results do not replace local validation recorded in the stage report. GPU tests
-will not run in hosted CI; they require a self-hosted machine and an explicit
-opt-in label.
+executed on GitHub Actions. The development history was later published to
+`origin/dev`, but no hosted-runner result has been observed or recorded by this
+hand-off; do not infer CI success from the push. CI results do not replace local
+validation recorded in the stage report. GPU tests will not run in hosted CI; they
+require a self-hosted machine and an explicit opt-in label.
 
 CI must not download models, install CUDA, or run benchmarks. A green CI result
 is not evidence about inference performance.
