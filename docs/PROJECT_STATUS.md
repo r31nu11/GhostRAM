@@ -5,8 +5,9 @@
 **Stage state:** Implementation and documentation complete; **pending formal
 acceptance**.
 **Branch:** `dev`.
-**Commit state:** Stage 03 content and final report/status commits are created during
-the Stage 03 hand-off; use `git log` for their exact hashes. Both commits use the
+**Commit state:** Stage 03 content commit
+`2dda210a28f88bee4dc6c2538db9224ca1cdb5d6`; the final report/status commit is its
+descendant and is identified with `git log -1` after hand-off. Both commits use the
 local maintainer identity `r31nu11 <r31nu11@mail.ru>`.
 **Publication:** the maintainer authorized publication of the Stage 00/01/02/03
 development history to `origin/dev`. This is not authorization for a tag, GitHub
@@ -124,7 +125,7 @@ hand-off reruns the suite over the completed history.
 | `cargo test --workspace --locked` | Passed; exact count in the Stage 03 report |
 | `cargo build --workspace --locked` | Passed |
 | `python3 scripts/check_docs.py` | Passed; exact counts in the Stage 03 report |
-| `bash scripts/check-commit-range.sh bdfced9d7db49a1e2bdad5dd1602822734da33b1 HEAD` | Run after the final report/status commit; recorded in the Stage 03 report |
+| `bash scripts/check-commit-range.sh bdfced9d7db49a1e2bdad5dd1602822734da33b1 HEAD` | Passed at the Stage 03 content commit; rerun over the final HEAD during hand-off and reported outside the self-referential commit |
 | Local author identity | `r31nu11` / `r31nu11@mail.ru` |
 | Complete diff inspection | Performed before staging |
 

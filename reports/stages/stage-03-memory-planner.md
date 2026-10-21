@@ -4,8 +4,10 @@
 **Maintainer:** `r31nu11` (project maintainer)
 **Branch:** `dev`
 **Status:** Complete, pending formal acceptance
-**Content commit:** Recorded by the final Stage 03 hand-off after staging.
-**Final report/status commit:** Recorded by the final Stage 03 hand-off.
+**Content commit:** `2dda210a28f88bee4dc6c2538db9224ca1cdb5d6`
+(`feat(planner): add deterministic memory planning`).
+**Final report/status commit:** the descendant `docs(stage-03)` commit; use
+`git log -1` at hand-off.
 
 ## 1. Stage identifier and title
 
@@ -209,7 +211,21 @@ $ python3 scripts/check_docs.py
 ok: 37 Markdown files, 208 relative links, 32 required files
 
 $ bash scripts/check-commit-range.sh bdfced9d7db49a1e2bdad5dd1602822734da33b1 HEAD
-    RESULT_PENDING
+# Output is abridged to the Stage 01/02/03 tail; all earlier commits in the range
+# were also accepted.
+check: ed96c19ea3a8 feat(stage-01): add diagnostic workspace and doctor command
+ok: commit message accepted
+check: 02ad8bb8a836 docs(stage-01): record validation and content commit
+ok: commit message accepted
+check: 887fba442b48 fix(probe): bound timeout cleanup to isolated process groups
+ok: commit message accepted
+check: 244809bf12fd feat(stage-02): add bounded GGUF model catalog
+ok: commit message accepted
+check: 4143ac648c71 docs(stage-02): record validation and content commit
+ok: commit message accepted
+check: 2dda210a28f8 feat(planner): add deterministic memory planning
+ok: commit message accepted
+ok: all checked commit messages passed
 
 $ git diff --check
 (no output)
@@ -224,9 +240,9 @@ r31nu11@mail.ru
 The full test run had no failures. `cargo test` also built the workspace test
 targets; the locked build command observed above is a separate check. Clippy
 warnings are denied. No test was skipped or reported as passed without execution.
-The final hand-off reruns the suite and commit-range check over the completed
-history; the commit-range result is recorded in this section and the final
-self-referential HEAD is reported outside the commit.
+The command above was observed with the Stage 03 content commit as `HEAD`. The
+final hand-off reruns the suite and commit-range check over the completed history;
+the final self-referential HEAD result is reported outside this commit.
 
 ## 8. Hardware tests and measurements
 
@@ -316,23 +332,22 @@ Unresolved questions:
 ## 11. Current branch and commit hash
 
 - Branch: `dev`.
-- Content commit: `CONTENT_COMMIT_PENDING`.
-- Final report/status commit: `FINAL_COMMIT_PENDING`.
+- Content commit: `2dda210a28f88bee4dc6c2538db9224ca1cdb5d6`.
+- Final report/status commit: the next `docs(stage-03)` commit. Its hash is
+  self-referential here; use `git log -1` after hand-off.
 - Both commits use the maintainer identity `r31nu11 <r31nu11@mail.ru>`.
 - The commits are local until the final hand-off pushes `dev` to `origin/dev`.
 - No tag, GitHub Release, artifact, or `main` promotion is created.
 
 ## 12. Git working-tree status
 
-Before the content commit, `git status --short` contains only the Stage 03 code,
+At content-commit staging, `git status --short` contained only the Stage 03 code,
 test, documentation, policy, schema, research, and report additions/modifications.
-Untracked paths are the new planner crate, `crates/ghostram-probe/src/planning.rs`,
-and the three new documentation/research files. Build output under `target/` is
-ignored.
+The content commit contains those paths. Build output under `target/` is ignored.
 
 After the final report/status commit, the working tree is expected to be clean.
-The final hand-off verifies `git status --short` and records the observed result in
-the commit-range validation output.
+The final hand-off verifies `git status --short` and reports the observed result
+outside the self-referential commit.
 
 ## 13. Documentation updated
 
